@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.kjetland.dropwizard</groupId>
     <artifactId>dropwizard-activemq</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1-SNAPSHOT</version>
 
     <properties>
         <dropwizard.version>0.7.0</dropwizard.version>
@@ -80,5 +80,22 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>mbknor</id>
+            <name>mbknor</name>
+            <url>https://raw.githubusercontent.com/mbknor/mbknor.github.com/master/m2repo/releases/</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>mbk_mvn_repo</id>
+            <layout>default</layout>
+            <name>mbk_mvn_repo</name>
+            <url>file:///projects/git/mbknor.github.com/m2repo/releases</url>
+        </repository>
+    </distributionManagement>
 
 </project>

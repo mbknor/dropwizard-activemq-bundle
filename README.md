@@ -25,6 +25,17 @@ Now you can add it as a dependency:
     </dependency>
 ```
 
+Since this project is hosted on my own maven repo here on github, you also have to add this to your pom:
+
+```xml
+<repositories>
+    <repository>
+        <id>mbknor</id>
+        <name>mbknor</name>
+        <url>https://raw.githubusercontent.com/mbknor/mbknor.github.com/master/m2repo/releases</url>
+    </repository>
+</repositories>
+```
 
 Configuration
 ------------
