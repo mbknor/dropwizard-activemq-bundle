@@ -73,19 +73,18 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     // This must be used during run-phase
     public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, boolean ackMessageOnException ) {
 
-        ActiveMQReceiverHandler<T> handler = null;
         try {
-            handler = new ActiveMQReceiverHandler<T>(
+            ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
                     destination,
                     connectionFactory.createConnection(),
                     receiver,
                     clazz,
                     objectMapper,
                     ackMessageOnException);
+            environment.lifecycle().manage(handler);
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }
 
-        environment.lifecycle().manage(handler);
     }
 }
