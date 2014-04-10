@@ -1,0 +1,12 @@
+.idea
+*.iml
+.idea_modules
+*.log
+target
+.repository
+.settings
+.classpath
+.project
+testMails
+mem.h2.db
+atlassian-ide-plugin.xml
