@@ -46,6 +46,16 @@ public class Config extends Configuration implements ActiveMQConfigHolder {
 ```
 
 
+And add the following to your config.yml:
+
+```yaml
+
+activeMQ:
+  brokerUrl: tcp://localhost:61616
+
+```
+
+
 Use it like this
 --------------------
 
@@ -80,7 +90,7 @@ public class ActiveMQApp extends Application<Config> {
 
 
 
-        // Create a receiver that consumes json-strings
+        // Create a receiver that consumes json-strings using Java 8
         activeMQBundle.registerReceiver(
                 "test-queue",
                 (json) -> System.out.println("json: " + json),
@@ -88,10 +98,22 @@ public class ActiveMQApp extends Application<Config> {
                 true);
 
 
-        // Create a receiver that consumes SomeObject via json
+        // Create a receiver that consumes SomeObject via Json using Java 8
         activeMQBundle.registerReceiver(
                             "test-queue-2",
                             (o) -> System.out.println("Value from o: " + o.getValue()),
+                            SomeObject.class,
+                            true);
+
+        // Create a receiver that consumes SomeObject via Json using Java 7
+        activeMQBundle.registerReceiver(
+                            "test-queue-3",
+                            new ActiveMQReceiver<SomeObject>() {
+                                @Override
+                                public void receive(SomeObject o) {
+                                    System.out.println"Value from o: " + o.getValue());
+                                }
+                            },
                             SomeObject.class,
                             true);
     }
