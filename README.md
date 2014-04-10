@@ -3,12 +3,23 @@ Dropwizard ActiveMQ Bundle
 
 Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dropwizard 0.7.0 application.
 
+Change History
+-------
+
+Version 0.2 - 20140410
+
+* Added custom exception-handler
+
+Version 0.1 - 20140410
+
+* Initial version
+
 
 Maven
 ----------------
 
 
-Current version is: **0.1**
+Current version is: **0.2**
 
 
 Add it as a dependency:
