@@ -7,21 +7,17 @@ Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dro
 Maven
 ----------------
 
-Currently this bundle is not deployed to any repository (This will change),
-so you have to build it yourself.
 
-    git clone git@github.com:mbknor/dropwizard-activemq-bundle.git
-    cd dropwizard-activemq-bundl
-    maven clean install
+Current version is: **0.1**
 
 
-Now you can add it as a dependency:
+Add it as a dependency:
 
 ```xml
     <dependency>
         <groupId>com.kjetland.dropwizard</groupId>
         <artifactId>dropwizard-activemq</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version> INSERT LATEST VERSION HERE </version>
     </dependency>
 ```
 
