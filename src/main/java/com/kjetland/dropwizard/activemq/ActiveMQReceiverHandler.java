@@ -20,14 +20,14 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private final ObjectMapper objectMapper;
     private final Thread thread;
     private AtomicBoolean shouldStop = new AtomicBoolean(false);
-    private final boolean ackMessageOnException;
+    private final ActiveMQExceptionHandler exceptionHandler;
 
-    public ActiveMQReceiverHandler(String destination, Connection connection, ActiveMQReceiver<T> receiver, Class<? extends T> receiverType, ObjectMapper objectMapper, boolean ackMessageOnException) {
+    public ActiveMQReceiverHandler(String destination, Connection connection, ActiveMQReceiver<T> receiver, Class<? extends T> receiverType, ObjectMapper objectMapper, ActiveMQExceptionHandler exceptionHandler) {
         this.destination = destination;
         this.receiver = receiver;
         this.receiverType = receiverType;
         this.objectMapper = objectMapper;
-        this.ackMessageOnException = ackMessageOnException;
+        this.exceptionHandler = exceptionHandler;
 
         try {
             connection.start();
@@ -39,7 +39,6 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         }
 
         this.thread = new Thread(this, "Receiver "+destination);
-
     }
 
     @Override
@@ -59,8 +58,9 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     }
 
     private void processMessage(Message message) {
+        String json = null;
         try {
-            String json;
+
             if (message instanceof TextMessage) {
                 json = ((TextMessage) message).getText();
             } else {
@@ -79,15 +79,12 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
             message.acknowledge();
         } catch (Exception e) {
-            if (ackMessageOnException) {
-                log.error("Error processing received message - acknowledging it anyway", e);
+            if (exceptionHandler.onException(json, e)) {
                 try {
                     message.acknowledge();
                 } catch (JMSException x) {
                     throw new RuntimeException(x);
                 }
-            } else {
-                log.error("Error processing received message - NOT acknowledging it", e);
             }
         }
     }

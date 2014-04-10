@@ -71,7 +71,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, boolean ackMessageOnException ) {
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, final boolean ackMessageOnException ) {
 
         ActiveMQReceiverHandler<T> handler = null;
         try {
@@ -81,7 +81,34 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
                     receiver,
                     clazz,
                     objectMapper,
-                    ackMessageOnException);
+                    (message, exception) -> {
+                        if (ackMessageOnException) {
+                            log.error("Error processing received message - acknowledging it anyway", exception);
+                            return true;
+                        } else {
+                            log.error("Error processing received message - NOT acknowledging it", exception);
+                            return false;
+                        }
+                    });
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
+        }
+
+        environment.lifecycle().manage(handler);
+    }
+
+    // This must be used during run-phase
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, ActiveMQExceptionHandler exceptionHandler ) {
+
+        ActiveMQReceiverHandler<T> handler = null;
+        try {
+            handler = new ActiveMQReceiverHandler<T>(
+                    destination,
+                    connectionFactory.createConnection(),
+                    receiver,
+                    clazz,
+                    objectMapper,
+                    exceptionHandler);
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }

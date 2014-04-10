@@ -127,6 +127,18 @@ public class ActiveMQApp extends Application<Config> {
 }
 ```
 
+Custom exception-handling:
 
-
+```java
+activeMQBundle.registerReceiver(
+    config.getInboundJmsQueue(),
+    (ManualRequest m) -> myService.processMessage(m),
+    ManualRequest.class,
+    // Add your custom exception-handler here
+    (message, exception) -> {
+        System.out.println("Error with this message: " + message);
+        exception.printStackTrace();
+        return true;
+    });
+```
 
