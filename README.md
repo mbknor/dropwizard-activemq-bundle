@@ -17,12 +17,13 @@ so you have to build it yourself.
 
 Now you can add it as a dependency:
 
+```xml
     <dependency>
         <groupId>com.kjetland.dropwizard</groupId>
         <artifactId>dropwizard-activemq</artifactId>
         <version>1.0-SNAPSHOT</version>
     </dependency>
-
+```
 
 
 Configuration
@@ -30,68 +31,72 @@ Configuration
 
 Your config-class must implement ActiveMQConfigHolder like this:
 
-    public class Config extends Configuration implements ActiveMQConfigHolder {
+```java
+public class Config extends Configuration implements ActiveMQConfigHolder {
 
-        @JsonProperty
-        @NotNull
-        @Valid
-        private ActiveMQConfig activeMQ;
+    @JsonProperty
+    @NotNull
+    @Valid
+    private ActiveMQConfig activeMQ;
 
-        public ActiveMQConfig getActiveMQ() {
-            return activeMQ;
-        }
+    public ActiveMQConfig getActiveMQ() {
+        return activeMQ;
     }
+}
+```
 
 
 Use it like this
 --------------------
 
-    public class ActiveMQApp extends Application<Config> {
+```java
+public class ActiveMQApp extends Application<Config> {
 
-        public static void main(String[] args) throws Exception {
-            new ActiveMQApp().run(args);
-        }
-
-        private ActiveMQBundle activeMQBundle;
-
-        @Override
-        public void initialize(Bootstrap<Config> configBootstrap) {
-
-            // Create the bundle and store reference to it
-            this.activeMQBundle = new ActiveMQBundle();
-            // Add the bundle
-            configBootstrap.addBundle(activeMQBundle);
-        }
-
-        @Override
-        public void run(Config config, Environment environment) throws Exception {
-
-
-            // Create a sender
-            ActiveMQSender sender = activeMQBundle.createSender("test-queue", false);
-
-            // use it
-            sender.send( someObject );
-            sender.sendJson("{'a':2, 'b':3}");
-
-
-
-            // Create a receiver that consumes json-strings
-            activeMQBundle.registerReceiver(
-                    "test-queue",
-                    (json) -> System.out.println("json: " + json),
-                    String.class,
-                    true);
-
-
-            // Create a receiver that consumes SomeObject via json
-            activeMQBundle.registerReceiver(
-                                "test-queue-2",
-                                (o) -> System.out.println("Value from o: " + o.getValue()),
-                                SomeObject.class,
-                                true);
-        }
+    public static void main(String[] args) throws Exception {
+        new ActiveMQApp().run(args);
     }
+
+    private ActiveMQBundle activeMQBundle;
+
+    @Override
+    public void initialize(Bootstrap<Config> configBootstrap) {
+
+        // Create the bundle and store reference to it
+        this.activeMQBundle = new ActiveMQBundle();
+        // Add the bundle
+        configBootstrap.addBundle(activeMQBundle);
+    }
+
+    @Override
+    public void run(Config config, Environment environment) throws Exception {
+
+
+        // Create a sender
+        ActiveMQSender sender = activeMQBundle.createSender("test-queue", false);
+
+        // use it
+        sender.send( someObject );
+        sender.sendJson("{'a':2, 'b':3}");
+
+
+
+        // Create a receiver that consumes json-strings
+        activeMQBundle.registerReceiver(
+                "test-queue",
+                (json) -> System.out.println("json: " + json),
+                String.class,
+                true);
+
+
+        // Create a receiver that consumes SomeObject via json
+        activeMQBundle.registerReceiver(
+                            "test-queue-2",
+                            (o) -> System.out.println("Value from o: " + o.getValue()),
+                            SomeObject.class,
+                            true);
+    }
+}
+```
 
 
 
