@@ -13,6 +13,7 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
     private final MessageProducer messageProducer;
     private final ObjectMapper objectMapper;
     private final String destination;
+    protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
 
 
     public ActiveMQSenderImpl(Session session, ObjectMapper objectMapper, String destination, boolean persistent) {
@@ -20,8 +21,8 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
         this.objectMapper = objectMapper;
         this.destination = destination;
         try {
-            final Queue queue = session.createQueue(destination);
-            messageProducer = session.createProducer(queue);
+            final Destination d = destinationCreator.create(session, destination);
+            messageProducer = session.createProducer(d);
             messageProducer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
         } catch (JMSException e) {
             throw new RuntimeException(e);

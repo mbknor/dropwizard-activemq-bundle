@@ -99,8 +99,14 @@ public class ActiveMQApp extends Application<Config> {
     public void run(Config config, Environment environment) throws Exception {
 
 
-        // Create a sender
+        // Create queue a sender
         ActiveMQSender sender = activeMQBundle.createSender("test-queue", false);
+
+        // or like this:
+        ActiveMQSender sender2 = activeMQBundle.createSender("queue:test-queue", false);
+
+        // Create a topic-sender
+        ActiveMQSender sender3 = activeMQBundle.createSender("topic:test-topic", false);
 
         // use it
         sender.send( someObject );
@@ -110,7 +116,7 @@ public class ActiveMQApp extends Application<Config> {
 
         // Create a receiver that consumes json-strings using Java 8
         activeMQBundle.registerReceiver(
-                "test-queue",
+                "test-queue", // default is queue. Prefix with 'topic:' or 'queue:' to choose
                 (json) -> System.out.println("json: " + json),
                 String.class,
                 true);
@@ -138,7 +144,17 @@ public class ActiveMQApp extends Application<Config> {
 }
 ```
 
-Custom exception-handling:
+Topics and queue
+----------------
+By default all destination-names refers to *queues*.
+If you want to specify topic (or queue), you prefix it with:
+
+* topic:
+* queue:
+
+
+Custom exception-handling
+-----------------
 
 ```java
 activeMQBundle.registerReceiver(

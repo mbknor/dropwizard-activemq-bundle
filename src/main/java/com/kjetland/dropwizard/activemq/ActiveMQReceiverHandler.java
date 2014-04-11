@@ -21,6 +21,8 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private final Thread thread;
     private AtomicBoolean shouldStop = new AtomicBoolean(false);
     private final ActiveMQExceptionHandler exceptionHandler;
+    protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
+
 
     public ActiveMQReceiverHandler(String destination, Connection connection, ActiveMQReceiver<T> receiver, Class<? extends T> receiverType, ObjectMapper objectMapper, ActiveMQExceptionHandler exceptionHandler) {
         this.destination = destination;
@@ -32,8 +34,8 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         try {
             connection.start();
             this.session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-            final Queue queue = session.createQueue(destination);
-            this.messageConsumer = session.createConsumer(queue);
+            final Destination d = destinationCreator.create(session, destination);
+            this.messageConsumer = session.createConsumer(d);
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }
