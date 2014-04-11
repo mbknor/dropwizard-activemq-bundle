@@ -23,7 +23,7 @@ Maven
 ----------------
 
 
-Current version is: **0.2**
+Current version is: **0.3**
 
 
 Add it as a dependency:
