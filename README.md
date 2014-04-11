@@ -6,6 +6,10 @@ Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dro
 Change History
 -------
 
+Version 0.3 - 20140411
+
+* It is now possible to change between queues and topics by prefixing the destination-name
+
 Version 0.2 - 20140410
 
 * Added custom exception-handler
