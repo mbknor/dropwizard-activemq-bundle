@@ -1,6 +1,7 @@
 package com.kjetland.dropwizard.activemq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kjetland.dropwizard.activemq.errors.JsonError;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,7 +96,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         try {
             return (T)objectMapper.readValue(json, receiverType);
         } catch (IOException e) {
-            throw new RuntimeException("Error creating object of type " + receiverType + " from json: " + json);
+            throw new JsonError(e);
         }
     }
 

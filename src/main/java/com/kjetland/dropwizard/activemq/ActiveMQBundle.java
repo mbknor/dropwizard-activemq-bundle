@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
-// TODO: ahh healthchecks
-public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed {
+// TODO: add health-checks
+public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private PooledConnectionFactory connectionFactory = null;
