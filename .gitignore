@@ -10,3 +10,4 @@ target
 testMails
 mem.h2.db
 atlassian-ide-plugin.xml
+activemq-data

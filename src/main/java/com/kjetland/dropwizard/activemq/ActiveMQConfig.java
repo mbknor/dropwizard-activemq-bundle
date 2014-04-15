@@ -11,5 +11,8 @@ public class ActiveMQConfig {
     public String brokerUrl;
 
     @JsonProperty
+    public long healthCheckMillisecondsToWait = 2000; // 2 seconds
+
+    @JsonProperty
     public int shutdownWaitInSeconds = 20;
 }

@@ -13,10 +13,10 @@ import org.slf4j.LoggerFactory;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
-// TODO: add health-checks
 public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private ActiveMQConnectionFactory realConnectionFactory;
     private PooledConnectionFactory connectionFactory = null;
     private ObjectMapper objectMapper;
     private Environment environment;
@@ -34,13 +34,15 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
 
         log.info("Setting up activeMq with brokerUrl {}", brokerUrl);
 
-        final ActiveMQConnectionFactory realFactory = new ActiveMQConnectionFactory(brokerUrl);
+        realConnectionFactory = new ActiveMQConnectionFactory(brokerUrl);
         connectionFactory = new PooledConnectionFactory();
-        connectionFactory.setConnectionFactory(realFactory);
+        connectionFactory.setConnectionFactory(realConnectionFactory);
 
         objectMapper = environment.getObjectMapper();
 
         environment.lifecycle().manage(this);
+        environment.healthChecks().register("ActiveMQ",
+                new ActiveMQHealthCheck(connectionFactory, configuration.getActiveMQ().healthCheckMillisecondsToWait));
         this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
     }
 
@@ -119,4 +121,5 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
 
         environment.lifecycle().manage(handler);
     }
+
 }
