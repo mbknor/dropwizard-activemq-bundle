@@ -20,6 +20,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     private PooledConnectionFactory connectionFactory = null;
     private ObjectMapper objectMapper;
     private Environment environment;
+    private long shutdownWaitInSeconds;
 
 
     public ActiveMQBundle() {
@@ -40,6 +41,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         objectMapper = environment.getObjectMapper();
 
         environment.lifecycle().manage(this);
+        this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
     }
 
     @Override
@@ -89,7 +91,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
                             log.error("Error processing received message - NOT acknowledging it", exception);
                             return false;
                         }
-                    });
+                    },
+                    shutdownWaitInSeconds);
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }
@@ -108,7 +111,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
                     receiver,
                     clazz,
                     objectMapper,
-                    exceptionHandler);
+                    exceptionHandler,
+                    shutdownWaitInSeconds);
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }

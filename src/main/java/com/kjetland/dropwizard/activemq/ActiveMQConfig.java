@@ -9,4 +9,7 @@ public class ActiveMQConfig {
     @JsonProperty
     @NotNull
     public String brokerUrl;
+
+    @JsonProperty
+    public int shutdownWaitInSeconds = 20;
 }

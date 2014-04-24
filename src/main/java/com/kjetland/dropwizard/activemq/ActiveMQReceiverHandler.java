@@ -23,14 +23,23 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private AtomicBoolean shouldStop = new AtomicBoolean(false);
     private final ActiveMQExceptionHandler exceptionHandler;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
+    protected final long shutdownWaitInSeconds;
 
 
-    public ActiveMQReceiverHandler(String destination, Connection connection, ActiveMQReceiver<T> receiver, Class<? extends T> receiverType, ObjectMapper objectMapper, ActiveMQExceptionHandler exceptionHandler) {
+    public ActiveMQReceiverHandler(
+            String destination,
+            Connection connection,
+            ActiveMQReceiver<T> receiver,
+            Class<? extends T> receiverType,
+            ObjectMapper objectMapper,
+            ActiveMQExceptionHandler exceptionHandler,
+            long shutdownWaitInSeconds) {
         this.destination = destination;
         this.receiver = receiver;
         this.receiverType = receiverType;
         this.objectMapper = objectMapper;
         this.exceptionHandler = exceptionHandler;
+        this.shutdownWaitInSeconds = shutdownWaitInSeconds;
 
         try {
             connection.start();
@@ -52,10 +61,19 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
     @Override
     public void stop() throws Exception {
-        log.info("Stopping receiver for " + destination);
-        shouldStop.set(true);
-        while( thread.isAlive() ) {
-            Thread.sleep(200);
+        log.info("Stopping receiver for " + destination + " (Going to wait for max " + shutdownWaitInSeconds + " seconds)");
+
+        if (thread.isAlive()) {
+            shouldStop.set(true);
+            final long start = System.currentTimeMillis();
+            while (thread.isAlive()) {
+                if (((System.currentTimeMillis() - start) / 1000) >= shutdownWaitInSeconds) {
+                    log.warn("Giving up waiting for receiver-thread shutdown");
+                    break;
+                }
+                log.debug("ReceiverThread is still alive..");
+                Thread.sleep(200);
+            }
         }
         log.info("Stopped receiver for " + destination);
     }
@@ -105,6 +123,9 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
         try {
             while(!shouldStop.get()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Checking for new message");
+                }
                 Message message = messageConsumer.receive(200);
                 if (message != null) {
                     processMessage(message);
@@ -113,7 +134,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         } catch (Throwable e) {
             log.error("Uncaught error", e);
         }
-
+        log.debug("Message-checker-thread stopped");
     }
 
 }
