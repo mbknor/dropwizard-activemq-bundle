@@ -6,7 +6,11 @@ Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dro
 Change History
 -------
 
-Current version is: **0.3.3**
+Current version is: **0.3.4**
+
+Version 0.3.4 - 20140428
+
+* Removed resource-leakage when sending messages using multiple senders
 
 Version 0.3.3 - 20140428
 
