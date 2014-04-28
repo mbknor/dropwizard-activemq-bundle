@@ -9,24 +9,18 @@ import javax.jms.*;
 public class ActiveMQSenderImpl implements ActiveMQSender {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final Session session;
-    private final MessageProducer messageProducer;
+    private final ConnectionFactory connectionFactory;
     private final ObjectMapper objectMapper;
     private final String destination;
+    private final boolean persistent;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
 
 
-    public ActiveMQSenderImpl(Session session, ObjectMapper objectMapper, String destination, boolean persistent) {
-        this.session = session;
+    public ActiveMQSenderImpl(ConnectionFactory connectionFactory, ObjectMapper objectMapper, String destination, boolean persistent) {
+        this.connectionFactory = connectionFactory;
         this.objectMapper = objectMapper;
         this.destination = destination;
-        try {
-            final Destination d = destinationCreator.create(session, destination);
-            messageProducer = session.createProducer(d);
-            messageProducer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
+        this.persistent = persistent;
     }
 
     @Override
@@ -56,8 +50,38 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
 
     private void internalSend(String json) throws JMSException {
         log.info("Sending to {}: {}", destination, json);
-        final TextMessage textMessage = session.createTextMessage(json);
-        textMessage.setText(json);
-        messageProducer.send(textMessage);
+
+        // Since we're using the pooled connectionFactory,
+        // we can create connection, session and producer on the fly here.
+        // as long as we do the cleanup / return to pool
+
+        final Connection connection = connectionFactory.createConnection();
+        try {
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            try {
+
+                final Destination d = destinationCreator.create(session, destination);
+                final MessageProducer messageProducer = session.createProducer(d);
+                try {
+                    messageProducer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+
+                    final TextMessage textMessage = session.createTextMessage(json);
+                    textMessage.setText(json);
+                    messageProducer.send(textMessage);
+
+                } finally {
+                    ActiveMQUtils.silent( () -> messageProducer.close() );
+                }
+            } finally {
+                ActiveMQUtils.silent( () -> session.close() );
+            }
+
+        } finally {
+            ActiveMQUtils.silent( () -> connection.close() );
+        }
+        final Session session;
+
+
     }
 }

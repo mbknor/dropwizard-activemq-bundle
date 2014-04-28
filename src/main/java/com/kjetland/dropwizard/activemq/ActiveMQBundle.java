@@ -109,14 +109,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     public ActiveMQSender createSender(String destination, boolean persistent) {
-        final Session session;
-        try {
-            // todo: close connection
-            session = connectionFactory.createConnection().createSession(false, Session.AUTO_ACKNOWLEDGE);
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
-        return new ActiveMQSenderImpl(session, objectMapper, destination, persistent );
+        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, persistent );
     }
 
     // This must be used during run-phase
