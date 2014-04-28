@@ -6,6 +6,15 @@ Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dro
 Change History
 -------
 
+Current version is: **0.3.2**
+
+
+Version 0.3.1 - 20140428
+
+* Added activeMQ-HealthCheck
+* Added max-give-up-time for graceful shutdown
+* Added more debug logging
+
 Version 0.3.1 - 20140411
 
 * Added ActiveMQSenderFactory and JsonError
@@ -25,10 +34,6 @@ Version 0.1 - 20140410
 
 Maven
 ----------------
-
-
-Current version is: **0.3.1**
-
 
 Add it as a dependency:
 
