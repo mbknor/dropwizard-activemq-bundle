@@ -45,8 +45,14 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         objectMapper = environment.getObjectMapper();
 
         environment.lifecycle().manage(this);
+
+        // Must use realConnectionFactory instead of (pooled) connectionFactory for the healthCheck
+        // Is needs its own connection since it is both sending and receiving.
+        // If using pool, then it might block since no one is available..
         environment.healthChecks().register("ActiveMQ",
-                new ActiveMQHealthCheck(connectionFactory, configuration.getActiveMQ().healthCheckMillisecondsToWait));
+                new ActiveMQHealthCheck(
+                        realConnectionFactory,
+                        configuration.getActiveMQ().healthCheckMillisecondsToWait));
         this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
     }
 
