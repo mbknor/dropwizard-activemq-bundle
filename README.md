@@ -86,6 +86,25 @@ activeMQ:
 
 ```
 
+(Almost?) All config-options:
+
+```yaml
+
+activeMQ:
+  brokerUrl: failover:(tcp://boker1.com:61616,tcp://broker2.com:61616)?randomize=false
+  # shutdownWaitInSeconds: 20
+  # healthCheckMillisecondsToWait: 2000
+  pool:
+    maxConnections: 1
+    maximumActiveSessionPerConnection: 3
+    blockIfSessionPoolIsFull: false
+    idleTimeoutSeconds: 30
+    # expiryTimeoutMills:
+    createConnectionOnStartup: false
+    timeBetweenExpirationCheckMillis: 20000
+
+```
+
 
 Use it like this
 --------------------

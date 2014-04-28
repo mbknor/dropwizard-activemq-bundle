@@ -34,9 +34,13 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
 
         log.info("Setting up activeMq with brokerUrl {}", brokerUrl);
 
+        log.debug("All activeMQ config: " + configuration.getActiveMQ());
+
         realConnectionFactory = new ActiveMQConnectionFactory(brokerUrl);
         connectionFactory = new PooledConnectionFactory();
         connectionFactory.setConnectionFactory(realConnectionFactory);
+
+        configurePool(configuration.getActiveMQ().pool);
 
         objectMapper = environment.getObjectMapper();
 
@@ -44,6 +48,41 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         environment.healthChecks().register("ActiveMQ",
                 new ActiveMQHealthCheck(connectionFactory, configuration.getActiveMQ().healthCheckMillisecondsToWait));
         this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
+    }
+
+    private void configurePool(ActiveMQPoolConfig poolConfig) {
+        if (poolConfig == null) {
+            return ;
+        }
+
+        if (poolConfig.maxConnections != null) {
+            connectionFactory.setMaxConnections(poolConfig.maxConnections);
+        }
+
+        if (poolConfig.maximumActiveSessionPerConnection != null) {
+            connectionFactory.setMaximumActiveSessionPerConnection(poolConfig.maximumActiveSessionPerConnection);
+        }
+
+        if (poolConfig.blockIfSessionPoolIsFull != null) {
+            connectionFactory.setBlockIfSessionPoolIsFull(poolConfig.blockIfSessionPoolIsFull);
+        }
+
+        if (poolConfig.idleTimeoutSeconds != null) {
+            connectionFactory.setIdleTimeout(poolConfig.idleTimeoutSeconds);
+        }
+
+        if (poolConfig.expiryTimeoutMills != null) {
+            connectionFactory.setExpiryTimeout(poolConfig.expiryTimeoutMills);
+        }
+
+        if (poolConfig.createConnectionOnStartup != null) {
+            connectionFactory.setCreateConnectionOnStartup(poolConfig.createConnectionOnStartup);
+        }
+
+        if (poolConfig.timeBetweenExpirationCheckMillis != null) {
+            connectionFactory.setTimeBetweenExpirationCheckMillis(poolConfig.timeBetweenExpirationCheckMillis);
+        }
+
     }
 
     @Override
