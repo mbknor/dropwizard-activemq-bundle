@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Session;
+import java.util.Optional;
 
 public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
 
@@ -21,7 +22,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     private ObjectMapper objectMapper;
     private Environment environment;
     private long shutdownWaitInSeconds;
-
+    private Optional<Integer> defaultTimeToLiveInSeconds;
 
     public ActiveMQBundle() {
 
@@ -31,6 +32,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     public void run(ActiveMQConfigHolder configuration, Environment environment) throws Exception {
         this.environment = environment;
         final String brokerUrl = configuration.getActiveMQ().brokerUrl;
+        final int configuredTTL = configuration.getActiveMQ().timeToLiveInSeconds;
+        defaultTimeToLiveInSeconds = Optional.ofNullable(configuredTTL > 0 ? configuredTTL : null);
 
         log.info("Setting up activeMq with brokerUrl {}", brokerUrl);
 
@@ -109,10 +112,14 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     public ActiveMQSender createSender(String destination, boolean persistent) {
-        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, persistent );
+        return createSender(destination, persistent, defaultTimeToLiveInSeconds);
     }
 
-    // This must be used during run-phase
+    public ActiveMQSender createSender(String destination, boolean persistent, Optional<Integer> timeToLiveInSeconds) {
+        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, timeToLiveInSeconds, persistent );
+    }
+
+        // This must be used during run-phase
     public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, final boolean ackMessageOnException ) {
 
         ActiveMQReceiverHandler<T> handler = null;

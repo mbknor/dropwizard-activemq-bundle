@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class ActiveMQSenderImpl implements ActiveMQSender {
 
@@ -12,14 +14,17 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
     private final ConnectionFactory connectionFactory;
     private final ObjectMapper objectMapper;
     private final String destination;
+    private final Optional<Integer> timeToLiveInSeconds;
     private final boolean persistent;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
 
 
-    public ActiveMQSenderImpl(ConnectionFactory connectionFactory, ObjectMapper objectMapper, String destination, boolean persistent) {
+    public ActiveMQSenderImpl(ConnectionFactory connectionFactory, ObjectMapper objectMapper, String destination,
+                              Optional<Integer> timeToLiveInSeconds, boolean persistent) {
         this.connectionFactory = connectionFactory;
         this.objectMapper = objectMapper;
         this.destination = destination;
+        this.timeToLiveInSeconds = timeToLiveInSeconds;
         this.persistent = persistent;
     }
 
@@ -65,6 +70,9 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
                 final MessageProducer messageProducer = session.createProducer(d);
                 try {
                     messageProducer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
+                    if ( timeToLiveInSeconds.isPresent() ) {
+                        messageProducer.setTimeToLive(TimeUnit.SECONDS.toMillis(timeToLiveInSeconds.get()));
+                    }
 
                     final TextMessage textMessage = session.createTextMessage(json);
                     textMessage.setText(json);

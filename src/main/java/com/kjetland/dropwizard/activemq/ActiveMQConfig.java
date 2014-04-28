@@ -18,6 +18,9 @@ public class ActiveMQConfig {
     public int shutdownWaitInSeconds = 20;
 
     @JsonProperty
+    public int timeToLiveInSeconds = -1; // Default no TTL. Jackson does not support java.util.Optional yet.
+
+    @JsonProperty
     @Valid
     public ActiveMQPoolConfig pool;
 
@@ -27,6 +30,7 @@ public class ActiveMQConfig {
                 "brokerUrl='" + brokerUrl + '\'' +
                 ", healthCheckMillisecondsToWait=" + healthCheckMillisecondsToWait +
                 ", shutdownWaitInSeconds=" + shutdownWaitInSeconds +
+                ", timeToLiveInSeconds=" + timeToLiveInSeconds +
                 ", pool=" + pool +
                 '}';
     }
