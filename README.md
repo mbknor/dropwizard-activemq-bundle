@@ -6,10 +6,14 @@ Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dro
 Change History
 -------
 
-Current version is: **0.3.2**
+Current version is: **0.3.3**
 
+Version 0.3.3 - 20140428
 
-Version 0.3.1 - 20140428
+* Added more pool-config options
+* HealthCheck is not using pooled factory anymore to prevent hang
+
+Version 0.3.2 - 20140428
 
 * Added activeMQ-HealthCheck
 * Added max-give-up-time for graceful shutdown
