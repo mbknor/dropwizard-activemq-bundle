@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
-import javax.jms.Session;
 
 public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
 
@@ -73,8 +72,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
             connectionFactory.setBlockIfSessionPoolIsFull(poolConfig.blockIfSessionPoolIsFull);
         }
 
-        if (poolConfig.idleTimeoutSeconds != null) {
-            connectionFactory.setIdleTimeout(poolConfig.idleTimeoutSeconds);
+        if (poolConfig.idleTimeoutMills != null) {
+            connectionFactory.setIdleTimeout(poolConfig.idleTimeoutMills);
         }
 
         if (poolConfig.expiryTimeoutMills != null) {

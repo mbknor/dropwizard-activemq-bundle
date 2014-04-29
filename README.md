@@ -8,6 +8,10 @@ Change History
 
 Current version is: **0.3.4**
 
+Version 0.3.x
+
+* idleTimeout is now specified in mills
+
 Version 0.3.4 - 20140428
 
 * Removed resource-leakage when sending messages using multiple senders
@@ -106,7 +110,7 @@ activeMQ:
     maxConnections: 1
     maximumActiveSessionPerConnection: 3
     blockIfSessionPoolIsFull: false
-    idleTimeoutSeconds: 30
+    idleTimeoutMills: 30000
     # expiryTimeoutMills:
     createConnectionOnStartup: false
     timeBetweenExpirationCheckMillis: 20000
