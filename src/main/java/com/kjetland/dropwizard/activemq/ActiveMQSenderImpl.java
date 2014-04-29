@@ -63,6 +63,14 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
 
     private void internalSend(String json) throws JMSException {
         log.info("Sending to {}: {}", destination, json);
+        internalSend( session -> {
+            final TextMessage textMessage = session.createTextMessage(json);
+            textMessage.setText(json);
+            return textMessage;
+        } );
+    }
+
+    private void internalSend(JMSFunction<Session, Message> messageCreator) throws JMSException {
 
         // Since we're using the pooled connectionFactory,
         // we can create connection, session and producer on the fly here.
@@ -82,9 +90,8 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
                         messageProducer.setTimeToLive(TimeUnit.SECONDS.toMillis(timeToLiveInSeconds.get()));
                     }
 
-                    final TextMessage textMessage = session.createTextMessage(json);
-                    textMessage.setText(json);
-                    messageProducer.send(textMessage);
+                    final Message message = messageCreator.apply(session);
+                    messageProducer.send(message);
 
                 } finally {
                     ActiveMQUtils.silent(() -> messageProducer.close());
@@ -107,32 +114,7 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
         // as long as we do the cleanup / return to pool
 
         try {
-            final Connection connection = connectionFactory.createConnection();
-            try {
-
-                final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                try {
-
-                    final Destination d = destinationCreator.create(session, destination);
-                    final MessageProducer messageProducer = session.createProducer(d);
-                    try {
-                        messageProducer.setDeliveryMode(persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-                        if (timeToLiveInSeconds.isPresent()) {
-                            messageProducer.setTimeToLive(TimeUnit.SECONDS.toMillis(timeToLiveInSeconds.get()));
-                        }
-                        final Message message = messageCreator.apply(session);
-                        messageProducer.send(message);
-
-                    } finally {
-                        ActiveMQUtils.silent(() -> messageProducer.close());
-                    }
-                } finally {
-                    ActiveMQUtils.silent(() -> session.close());
-                }
-
-            } finally {
-                ActiveMQUtils.silent(() -> connection.close());
-            }
+            internalSend(messageCreator);
         } catch ( JMSException jmsException) {
             throw new RuntimeException("Error sending to jms", jmsException);
         }
