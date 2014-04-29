@@ -1,5 +1,6 @@
 package com.kjetland.dropwizard.activemq;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kjetland.dropwizard.activemq.errors.JsonError;
 import io.dropwizard.lifecycle.Managed;
@@ -12,15 +13,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
+    private static final long SLEEP_TIME_MILLS = 10000;
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final String destination;
-    private final Session session;
-    private final MessageConsumer messageConsumer;
+    private final ConnectionFactory connectionFactory;
     private final Class<? extends T> receiverType;
     private final ActiveMQReceiver<T> receiver;
     private final ObjectMapper objectMapper;
     private final Thread thread;
     private AtomicBoolean shouldStop = new AtomicBoolean(false);
+    private AtomicBoolean isReceiving = new AtomicBoolean(false);
     private final ActiveMQExceptionHandler exceptionHandler;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
     protected final long shutdownWaitInSeconds;
@@ -28,27 +30,20 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
     public ActiveMQReceiverHandler(
             String destination,
-            Connection connection,
+            ConnectionFactory connectionFactory,
             ActiveMQReceiver<T> receiver,
             Class<? extends T> receiverType,
             ObjectMapper objectMapper,
             ActiveMQExceptionHandler exceptionHandler,
             long shutdownWaitInSeconds) {
+
         this.destination = destination;
+        this.connectionFactory = connectionFactory;
         this.receiver = receiver;
         this.receiverType = receiverType;
         this.objectMapper = objectMapper;
         this.exceptionHandler = exceptionHandler;
         this.shutdownWaitInSeconds = shutdownWaitInSeconds;
-
-        try {
-            connection.start();
-            this.session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-            final Destination d = destinationCreator.create(session, destination);
-            this.messageConsumer = session.createConsumer(d);
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
 
         this.thread = new Thread(this, "Receiver "+destination);
     }
@@ -121,20 +116,74 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     @Override
     public void run() {
 
-        try {
-            while(!shouldStop.get()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Checking for new message");
+
+        int errorsInARowCount = 0;
+        while(!shouldStop.get()) {
+
+            try {
+                log.info("Setting up receiver for " + destination);
+                final Connection connection = connectionFactory.createConnection();
+                try {
+                    connection.start();
+                    final Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+                    try {
+
+                        final Destination d = destinationCreator.create(session, destination);
+                        final MessageConsumer messageConsumer = session.createConsumer(d);
+                        try {
+                            log.info("Started listening for messages on " + destination);
+                            errorsInARowCount = 0;
+                            isReceiving.set(true);
+                            runReceiveLoop(messageConsumer);
+                        } finally {
+                            isReceiving.set(false);
+                            ActiveMQUtils.silent(() -> messageConsumer.close());
+                        }
+                    } finally {
+                        ActiveMQUtils.silent(() -> session.close());
+                    }
+
+                } finally {
+                    ActiveMQUtils.silent(() -> connection.close());
                 }
-                Message message = messageConsumer.receive(200);
-                if (message != null) {
-                    processMessage(message);
+            } catch (Throwable e) {
+                errorsInARowCount++;
+                log.error("Uncaught exception - will try to recover", e);
+
+                // Prevent using too much CPU when stuff does not work
+                if ( errorsInARowCount > 1) {
+                    log.info("Numbers of errors in a row {} - Going to sleep {} mills before retrying", errorsInARowCount, SLEEP_TIME_MILLS);
+                    ActiveMQUtils.silent(() -> Thread.sleep(SLEEP_TIME_MILLS));
                 }
             }
-        } catch (Throwable e) {
-            log.error("Uncaught error", e);
         }
+
         log.debug("Message-checker-thread stopped");
+    }
+
+    private void runReceiveLoop(MessageConsumer messageConsumer) throws JMSException {
+        while(!shouldStop.get()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Checking for new message");
+            }
+            Message message = messageConsumer.receive(200);
+            if (message != null) {
+                processMessage(message);
+            }
+        }
+    }
+
+    public HealthCheck getHealthCheck() {
+        return new HealthCheck() {
+            @Override
+            protected Result check() throws Exception {
+                if (isReceiving.get()) {
+                    return Result.healthy("Is receiving from " + destination);
+                } else {
+                    return Result.unhealthy("Is NOT receiving from " + destination);
+                }
+            }
+        };
     }
 
 }

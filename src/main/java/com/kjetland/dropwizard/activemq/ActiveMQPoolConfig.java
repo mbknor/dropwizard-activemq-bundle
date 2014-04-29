@@ -14,7 +14,7 @@ public class ActiveMQPoolConfig {
     public Boolean blockIfSessionPoolIsFull;
 
     @JsonProperty
-    public Integer idleTimeoutSeconds;
+    public Integer idleTimeoutMills;
 
     @JsonProperty
     public Long expiryTimeoutMills;
@@ -31,7 +31,7 @@ public class ActiveMQPoolConfig {
                 "maxConnections=" + maxConnections +
                 ", maximumActiveSessionPerConnection=" + maximumActiveSessionPerConnection +
                 ", blockIfSessionPoolIsFull=" + blockIfSessionPoolIsFull +
-                ", idleTimeoutSeconds=" + idleTimeoutSeconds +
+                ", idleTimeoutMills=" + idleTimeoutMills +
                 ", expiryTimeoutMills=" + expiryTimeoutMills +
                 ", createConnectionOnStartup=" + createConnectionOnStartup +
                 ", timeBetweenExpirationCheckMillis=" + timeBetweenExpirationCheckMillis +

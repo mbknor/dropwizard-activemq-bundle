@@ -10,8 +10,6 @@ import org.apache.activemq.jms.pool.PooledConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.Session;
 import java.util.Optional;
 
 public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
@@ -55,13 +53,14 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         environment.healthChecks().register("ActiveMQ",
                 new ActiveMQHealthCheck(
                         realConnectionFactory,
-                        configuration.getActiveMQ().healthCheckMillisecondsToWait));
+                        configuration.getActiveMQ().healthCheckMillisecondsToWait)
+        );
         this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
     }
 
     private void configurePool(ActiveMQPoolConfig poolConfig) {
         if (poolConfig == null) {
-            return ;
+            return;
         }
 
         if (poolConfig.maxConnections != null) {
@@ -76,8 +75,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
             connectionFactory.setBlockIfSessionPoolIsFull(poolConfig.blockIfSessionPoolIsFull);
         }
 
-        if (poolConfig.idleTimeoutSeconds != null) {
-            connectionFactory.setIdleTimeout(poolConfig.idleTimeoutSeconds);
+        if (poolConfig.idleTimeoutMills != null) {
+            connectionFactory.setIdleTimeout(poolConfig.idleTimeoutMills);
         }
 
         if (poolConfig.expiryTimeoutMills != null) {
@@ -116,55 +115,53 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     public ActiveMQSender createSender(String destination, boolean persistent, Optional<Integer> timeToLiveInSeconds) {
-        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, timeToLiveInSeconds, persistent );
-    }
-
-        // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, final boolean ackMessageOnException ) {
-
-        ActiveMQReceiverHandler<T> handler = null;
-        try {
-            handler = new ActiveMQReceiverHandler<T>(
-                    destination,
-                    connectionFactory.createConnection(),
-                    receiver,
-                    clazz,
-                    objectMapper,
-                    (message, exception) -> {
-                        if (ackMessageOnException) {
-                            log.error("Error processing received message - acknowledging it anyway", exception);
-                            return true;
-                        } else {
-                            log.error("Error processing received message - NOT acknowledging it", exception);
-                            return false;
-                        }
-                    },
-                    shutdownWaitInSeconds);
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
-
-        environment.lifecycle().manage(handler);
+        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, timeToLiveInSeconds, persistent);
     }
 
     // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, ActiveMQExceptionHandler exceptionHandler ) {
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
+                                     final boolean ackMessageOnException) {
 
-        ActiveMQReceiverHandler<T> handler = null;
-        try {
-            handler = new ActiveMQReceiverHandler<T>(
-                    destination,
-                    connectionFactory.createConnection(),
-                    receiver,
-                    clazz,
-                    objectMapper,
-                    exceptionHandler,
-                    shutdownWaitInSeconds);
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
+        ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
+                destination,
+                connectionFactory,
+                receiver,
+                clazz,
+                objectMapper,
+                (message, exception) -> {
+                    if (ackMessageOnException) {
+                        log.error("Error processing received message - acknowledging it anyway", exception);
+                        return true;
+                    } else {
+                        log.error("Error processing received message - NOT acknowledging it", exception);
+                        return false;
+                    }
+                },
+                shutdownWaitInSeconds
+        );
 
+        internalRegisterReceiver(destination, handler);
+    }
+
+    private <T> void internalRegisterReceiver(String destination, ActiveMQReceiverHandler<T> handler) {
         environment.lifecycle().manage(handler);
+        environment.healthChecks().register("ActiveMQ receiver for " + destination, handler.getHealthCheck());
+    }
+
+    // This must be used during run-phase
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
+                                     ActiveMQExceptionHandler exceptionHandler) {
+
+        ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
+                destination,
+                connectionFactory,
+                receiver,
+                clazz,
+                objectMapper,
+                exceptionHandler,
+                shutdownWaitInSeconds);
+
+        internalRegisterReceiver(destination, handler);
     }
 
 }

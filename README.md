@@ -8,6 +8,13 @@ Change History
 
 Current version is: **0.3.4**
 
+Version 0.3.x
+
+* Improved error handling for receiver + added healthCheck for each receiver
+* idleTimeout is now specified in mills
+* Added time to live for JMS message sending
+* Added more flexible option for creating messages by passing a function
+
 Version 0.3.4 - 20140428
 
 * Removed resource-leakage when sending messages using multiple senders
@@ -92,6 +99,7 @@ And add the following to your config.yml:
 activeMQ:
   brokerUrl: tcp://localhost:61616
 
+
 ```
 
 (Almost?) All config-options:
@@ -102,11 +110,12 @@ activeMQ:
   brokerUrl: failover:(tcp://boker1.com:61616,tcp://broker2.com:61616)?randomize=false
   # shutdownWaitInSeconds: 20
   # healthCheckMillisecondsToWait: 2000
+  # timeToLiveInSeconds: -1     (Default message time-to-live is off. Specify a maximum lifespan here in seconds for all messages.)
   pool:
     maxConnections: 1
     maximumActiveSessionPerConnection: 3
     blockIfSessionPoolIsFull: false
-    idleTimeoutSeconds: 30
+    idleTimeoutMills: 30000
     # expiryTimeoutMills:
     createConnectionOnStartup: false
     timeBetweenExpirationCheckMillis: 20000
@@ -139,19 +148,29 @@ public class ActiveMQApp extends Application<Config> {
     public void run(Config config, Environment environment) throws Exception {
 
 
-        // Create queue a sender
+        // Create a queue sender
         ActiveMQSender sender = activeMQBundle.createSender("test-queue", false);
 
         // or like this:
         ActiveMQSender sender2 = activeMQBundle.createSender("queue:test-queue", false);
 
+        // where messages have a 60 second time-to-live:
+        ActiveMQSender sender3 = activeMQBundle.createSender("queue:test-queue", false, Optional.of(60));
+
         // Create a topic-sender
-        ActiveMQSender sender3 = activeMQBundle.createSender("topic:test-topic", false);
+        ActiveMQSender sender4 = activeMQBundle.createSender("topic:test-topic", false);
 
         // use it
         sender.send( someObject );
         sender.sendJson("{'a':2, 'b':3}");
 
+        // If you require full control of message creation, pass a Java 8 function that takes a javax.jms.Session parameter:
+        sender.send((Session session) -> {
+            TextMessage message = session.createTextMessage();
+            message.setText("{'a':2, 'b':3}");
+            message.setJMSCorrelationID(myCorrelationId);
+            return message;
+        });
 
 
         // Create a receiver that consumes json-strings using Java 8
