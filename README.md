@@ -10,6 +10,7 @@ Current version is: **0.3.4**
 
 Version 0.3.x
 
+* Improved error handling for receiver + added healthCheck for each receiver
 * idleTimeout is now specified in mills
 
 Version 0.3.4 - 20140428

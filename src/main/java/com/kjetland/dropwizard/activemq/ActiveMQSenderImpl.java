@@ -80,7 +80,6 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
         } finally {
             ActiveMQUtils.silent( () -> connection.close() );
         }
-        final Session session;
 
 
     }
