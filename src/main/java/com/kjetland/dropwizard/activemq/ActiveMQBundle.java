@@ -10,7 +10,7 @@ import org.apache.activemq.jms.pool.PooledConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.JMSException;
+import java.util.Optional;
 
 public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
 
@@ -20,7 +20,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     private ObjectMapper objectMapper;
     private Environment environment;
     private long shutdownWaitInSeconds;
-
+    private Optional<Integer> defaultTimeToLiveInSeconds;
 
     public ActiveMQBundle() {
 
@@ -30,6 +30,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     public void run(ActiveMQConfigHolder configuration, Environment environment) throws Exception {
         this.environment = environment;
         final String brokerUrl = configuration.getActiveMQ().brokerUrl;
+        final int configuredTTL = configuration.getActiveMQ().timeToLiveInSeconds;
+        defaultTimeToLiveInSeconds = Optional.ofNullable(configuredTTL > 0 ? configuredTTL : null);
 
         log.info("Setting up activeMq with brokerUrl {}", brokerUrl);
 
@@ -51,13 +53,14 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         environment.healthChecks().register("ActiveMQ",
                 new ActiveMQHealthCheck(
                         realConnectionFactory,
-                        configuration.getActiveMQ().healthCheckMillisecondsToWait));
+                        configuration.getActiveMQ().healthCheckMillisecondsToWait)
+        );
         this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
     }
 
     private void configurePool(ActiveMQPoolConfig poolConfig) {
         if (poolConfig == null) {
-            return ;
+            return;
         }
 
         if (poolConfig.maxConnections != null) {
@@ -108,14 +111,18 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     public ActiveMQSender createSender(String destination, boolean persistent) {
-        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, persistent );
+        return createSender(destination, persistent, defaultTimeToLiveInSeconds);
+    }
+
+    public ActiveMQSender createSender(String destination, boolean persistent, Optional<Integer> timeToLiveInSeconds) {
+        return new ActiveMQSenderImpl(connectionFactory, objectMapper, destination, timeToLiveInSeconds, persistent);
     }
 
     // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, final boolean ackMessageOnException ) {
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
+                                     final boolean ackMessageOnException) {
 
-        ActiveMQReceiverHandler<T> handler = null;
-        handler = new ActiveMQReceiverHandler<T>(
+        ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
                 destination,
                 connectionFactory,
                 receiver,
@@ -130,7 +137,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
                         return false;
                     }
                 },
-                shutdownWaitInSeconds);
+                shutdownWaitInSeconds
+        );
 
         internalRegisterReceiver(destination, handler);
     }
@@ -141,10 +149,10 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, ActiveMQExceptionHandler exceptionHandler ) {
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
+                                     ActiveMQExceptionHandler exceptionHandler) {
 
-        ActiveMQReceiverHandler<T> handler = null;
-        handler = new ActiveMQReceiverHandler<T>(
+        ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
                 destination,
                 connectionFactory,
                 receiver,
