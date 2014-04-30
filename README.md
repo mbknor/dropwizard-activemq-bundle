@@ -6,9 +6,9 @@ Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dro
 Change History
 -------
 
-Current version is: **0.3.4**
+Current version is: **0.3.5**
 
-Version 0.3.x
+Version 0.3.5
 
 * Improved error handling for receiver + added healthCheck for each receiver
 * idleTimeout is now specified in mills
