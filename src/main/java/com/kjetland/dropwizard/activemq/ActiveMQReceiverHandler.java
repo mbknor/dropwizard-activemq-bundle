@@ -27,6 +27,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
     protected final long shutdownWaitInSeconds;
 
+    protected int errorsInARowCount = 0;
 
     public ActiveMQReceiverHandler(
             String destination,
@@ -117,11 +118,20 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     public void run() {
 
 
-        int errorsInARowCount = 0;
+        errorsInARowCount = 0;
+        // From time to time, we get the issue #5 - Use less verbose errors when 'The Consumer is closed'.
+        // When this error has happened (and only once) we must suppress the re-init logging.
+        boolean verboseInitLogging = true;
         while(!shouldStop.get()) {
 
             try {
-                log.info("Setting up receiver for " + destination);
+
+                if (verboseInitLogging) {
+                    log.info("Setting up receiver for " + destination);
+                } else {
+                    log.debug("Setting up receiver for " + destination);
+                }
+
                 final Connection connection = connectionFactory.createConnection();
                 try {
                     connection.start();
@@ -131,8 +141,13 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                         final Destination d = destinationCreator.create(session, destination);
                         final MessageConsumer messageConsumer = session.createConsumer(d);
                         try {
-                            log.info("Started listening for messages on " + destination);
-                            errorsInARowCount = 0;
+
+                            if (verboseInitLogging) {
+                                log.info("Started listening for messages on " + destination);
+                            } else {
+                                log.debug("Started listening for messages on " + destination);
+                            }
+
                             isReceiving.set(true);
                             runReceiveLoop(messageConsumer);
                         } finally {
@@ -148,10 +163,27 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                 }
             } catch (Throwable e) {
                 errorsInARowCount++;
-                log.error("Uncaught exception - will try to recover", e);
+                boolean continuingErrorSituation = errorsInARowCount > 1;
+
+                // reset the verboseInitLogging-flag
+                verboseInitLogging = true;
+
+                // Must check for issue #5 - Use less verbose errors when 'The Consumer is closed'
+                if ( e instanceof javax.jms.IllegalStateException
+                        && e.getMessage().equals("The Consumer is closed")
+                        && !continuingErrorSituation) {
+                    // This is the first error we see,
+                    // and it is the "javax.jms.IllegalStateException: The Consumer is closed"-error
+                    // log it as debug.
+                    log.debug("Consumer is closed - will try to recover", e);
+                    // In this situation we do not want to verbose log the following initialization
+                    verboseInitLogging = false;
+                } else {
+                    log.error("Uncaught exception - will try to recover", e);
+                }
 
                 // Prevent using too much CPU when stuff does not work
-                if ( errorsInARowCount > 1) {
+                if (continuingErrorSituation) {
                     log.info("Numbers of errors in a row {} - Going to sleep {} mills before retrying", errorsInARowCount, SLEEP_TIME_MILLS);
                     ActiveMQUtils.silent(() -> Thread.sleep(SLEEP_TIME_MILLS));
                 }
@@ -167,6 +199,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                 log.debug("Checking for new message");
             }
             Message message = messageConsumer.receive(200);
+            errorsInARowCount = 0;
             if (message != null) {
                 processMessage(message);
             }
