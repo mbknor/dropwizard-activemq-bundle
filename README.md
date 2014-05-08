@@ -10,7 +10,7 @@ Current version is: **0.3.6**
 
 Version 0.3.6
 
-* Fixed issue #5 - Use less verbose errors when 'The Consumer is closed'
+* Fixed [issue #5](https://github.com/mbknor/dropwizard-activemq-bundle/issues/5) - Use less verbose errors when 'The Consumer is closed'
 
 Version 0.3.5
 
