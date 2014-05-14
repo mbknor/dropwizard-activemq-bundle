@@ -1,4 +1,4 @@
-package com.kjetland.dropwizard.activemq.example;
+package example;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kjetland.dropwizard.activemq.ActiveMQConfig;

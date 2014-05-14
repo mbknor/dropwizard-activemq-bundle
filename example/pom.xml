@@ -49,7 +49,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.kjetland.dropwizard.activemq.example.ExampleApp</mainClass>
+                    <mainClass>example.ExampleApp</mainClass>
                     <arguments>
                         <argument>server</argument>
                         <argument>config.yml</argument>

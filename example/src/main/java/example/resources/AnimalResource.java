@@ -1,7 +1,7 @@
-package com.kjetland.dropwizard.activemq.example.resources;
+package example.resources;
 
 import com.kjetland.dropwizard.activemq.ActiveMQSender;
-import com.kjetland.dropwizard.activemq.example.data.Animal;
+import example.data.Animal;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

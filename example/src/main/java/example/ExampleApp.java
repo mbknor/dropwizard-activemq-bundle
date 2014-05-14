@@ -1,9 +1,9 @@
-package com.kjetland.dropwizard.activemq.example;
+package example;
 
 import com.kjetland.dropwizard.activemq.ActiveMQBundle;
 import com.kjetland.dropwizard.activemq.ActiveMQSender;
-import com.kjetland.dropwizard.activemq.example.data.Animal;
-import com.kjetland.dropwizard.activemq.example.resources.AnimalResource;
+import example.data.Animal;
+import example.resources.AnimalResource;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;

@@ -32,7 +32,7 @@ You will then see that the animal is received from the browser, sent to ActiveMQ
 
     INFO  [2014-05-14 19:28:33,099] com.kjetland.dropwizard.activemq.ActiveMQSenderImpl: Sending to animalQueue: {"type":"dog","name":"Nemi","age":7}
     INFO  [2014-05-14 19:28:33,115] com.kjetland.dropwizard.activemq.ActiveMQReceiverHandler: Received {"type":"dog","name":"Nemi","age":7}
-    INFO  [2014-05-14 19:28:33,120] com.kjetland.dropwizard.activemq.example.ExampleApp:
+    INFO  [2014-05-14 19:28:33,120] example.ExampleApp:
     *****
     We received an animal from activeMq:
     Animal{type='dog', name='Nemi', age=7}
