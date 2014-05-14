@@ -3,6 +3,8 @@ Dropwizard ActiveMQ Bundle
 
 Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dropwizard 0.7.0 application.
 
+Please have a look at the [Example application](https://github.com/mbknor/dropwizard-activemq-bundle/tree/master/example).
+
 Change History
 -------
 
@@ -129,6 +131,8 @@ activeMQ:
 
 Use it like this
 --------------------
+
+(Please have a look at the [Example application](https://github.com/mbknor/dropwizard-activemq-bundle/tree/master/example))
 
 ```java
 public class ActiveMQApp extends Application<Config> {
