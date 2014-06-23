@@ -1,6 +1,8 @@
 Dropwizard ActiveMQ Bundle
 ==================================
 
+*Since Dropwizard ActiveMQ Bundle is written in Java 8, your app must also be compiled with Java 8 (But you can of course still use Dropwizard which is not Java 8).*
+
 Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dropwizard 0.7.0 application.
 
 Please have a look at the [Example application](https://github.com/mbknor/dropwizard-activemq-bundle/tree/master/example).
