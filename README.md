@@ -10,7 +10,11 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.6**
+Current version is: **0.3.7**
+
+Version 0.3.7
+
+* Merged [Added raw jms message to exception handler](https://github.com/mbknor/dropwizard-activemq-bundle/pull/8)
 
 Version 0.3.6
 
