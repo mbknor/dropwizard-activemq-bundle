@@ -23,7 +23,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private final Thread thread;
     private AtomicBoolean shouldStop = new AtomicBoolean(false);
     private AtomicBoolean isReceiving = new AtomicBoolean(false);
-    private final ActiveMQExceptionHandler exceptionHandler;
+    private final ActiveMQBaseExceptionHandler exceptionHandler;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
     protected final long shutdownWaitInSeconds;
 
@@ -35,7 +35,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
             ActiveMQReceiver<T> receiver,
             Class<? extends T> receiverType,
             ObjectMapper objectMapper,
-            ActiveMQExceptionHandler exceptionHandler,
+            ActiveMQBaseExceptionHandler exceptionHandler,
             long shutdownWaitInSeconds) {
 
         this.destination = destination;
@@ -47,6 +47,17 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         this.shutdownWaitInSeconds = shutdownWaitInSeconds;
 
         this.thread = new Thread(this, "Receiver "+destination);
+    }
+
+    public ActiveMQReceiverHandler(
+            String destination,
+            ConnectionFactory connectionFactory,
+            ActiveMQReceiver<T> receiver,
+            Class<? extends T> receiverType,
+            ObjectMapper objectMapper,
+            ActiveMQExceptionHandler exceptionHandler,
+            long shutdownWaitInSeconds) {
+        this(destination, connectionFactory, receiver, receiverType, objectMapper, (ActiveMQBaseExceptionHandler)exceptionHandler, shutdownWaitInSeconds);
     }
 
     @Override
@@ -96,7 +107,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
             message.acknowledge();
         } catch (Exception e) {
-            if (exceptionHandler.onException(json, e)) {
+            if (exceptionHandler.onException(message, json, e)) {
                 try {
                     message.acknowledge();
                 } catch (JMSException x) {

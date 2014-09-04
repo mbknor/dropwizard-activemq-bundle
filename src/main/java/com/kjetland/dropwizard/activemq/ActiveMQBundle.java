@@ -150,7 +150,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
 
     // This must be used during run-phase
     public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
-                                     ActiveMQExceptionHandler exceptionHandler) {
+                                     ActiveMQBaseExceptionHandler exceptionHandler) {
 
         ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
                 destination,
@@ -164,4 +164,9 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         internalRegisterReceiver(destination, handler);
     }
 
+    // This must be used during run-phase
+    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
+                                     ActiveMQExceptionHandler exceptionHandler) {
+        registerReceiver(destination, receiver, clazz, (ActiveMQBaseExceptionHandler) exceptionHandler);
+    }
 }
