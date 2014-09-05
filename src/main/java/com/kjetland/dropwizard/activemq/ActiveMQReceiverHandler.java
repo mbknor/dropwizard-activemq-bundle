@@ -5,14 +5,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kjetland.dropwizard.activemq.errors.JsonError;
 import io.dropwizard.lifecycle.Managed;
 import org.apache.activemq.ActiveMQMessageConsumer;
+import org.apache.activemq.jms.pool.PooledMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
+
+    static final Field pooledMessageConsumerDelegateField;
+
+    static {
+        try {
+            pooledMessageConsumerDelegateField = PooledMessageConsumer.class.getDeclaredField("delegate");
+            pooledMessageConsumerDelegateField.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final long SLEEP_TIME_MILLS = 10000;
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -157,7 +170,8 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                     try {
 
                         final Destination d = destinationCreator.create(session, destination);
-                        final ActiveMQMessageConsumer messageConsumer = (ActiveMQMessageConsumer)session.createConsumer(d);
+                        final MessageConsumer rawMessageConsumer = session.createConsumer(d);
+                        final ActiveMQMessageConsumer messageConsumer = convertToActiveMQMessageConsumer(rawMessageConsumer);
                         try {
 
                             if (verboseInitLogging) {
@@ -209,6 +223,21 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         }
 
         log.debug("Message-checker-thread stopped");
+    }
+
+
+    private ActiveMQMessageConsumer convertToActiveMQMessageConsumer(MessageConsumer rawMessageConsumer) {
+        if ( rawMessageConsumer instanceof ActiveMQMessageConsumer) {
+            return (ActiveMQMessageConsumer)rawMessageConsumer;
+        } else if (rawMessageConsumer instanceof PooledMessageConsumer) {
+            try {
+                return (ActiveMQMessageConsumer) pooledMessageConsumerDelegateField.get(rawMessageConsumer);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Error extracting ActiveMQMessageConsumer from " + rawMessageConsumer.getClass(), e);
+            }
+        } else {
+            throw new RuntimeException("Unable to convert messageConsumer '" + rawMessageConsumer.getClass() + "' to ActiveMQMessageConsumer");
+        }
     }
 
     private void runReceiveLoop(ActiveMQMessageConsumer messageConsumer) throws JMSException {

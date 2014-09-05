@@ -3,6 +3,7 @@ package com.kjetland.dropwizard.activemq;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
+import org.apache.activemq.jms.pool.PooledConnectionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,7 +69,9 @@ public class ActiveMQReceiverHandlerReliveryTest {
     }
 
     private void doTestRedelivery(String destinationName) throws Exception {
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        ActiveMQConnectionFactory realConnectionFactory = new ActiveMQConnectionFactory(url);
+        PooledConnectionFactory connectionFactory = new PooledConnectionFactory();
+        connectionFactory.setConnectionFactory(realConnectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
