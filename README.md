@@ -10,7 +10,11 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.7**
+Current version is: **0.3.8**
+
+Version 0.3.8
+
+* Fixed [issue #6](https://github.com/mbknor/dropwizard-activemq-bundle/issues/6) - Improve handling of failing exceptionHandler
 
 Version 0.3.7
 
