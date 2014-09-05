@@ -1,6 +1,7 @@
 package com.kjetland.dropwizard.activemq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.activemq.ActiveMQMessageConsumer;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +62,7 @@ public class ActiveMQReceiverHandlerTest {
     Topic destinationTopic;
 
     @Mock
-    MessageConsumer messageConsumer;
+    ActiveMQMessageConsumer messageConsumer;
 
     ObjectMapper objectMapper;
 
@@ -213,7 +214,7 @@ public class ActiveMQReceiverHandlerTest {
                 (m)->receiveMessage(m),
                 String.class,
                 objectMapper,
-                (m,e) -> exceptionHandler(m,e),
+                (m,e) -> exceptionHandler(m, e),
                 1);
 
         h.start();
@@ -224,7 +225,7 @@ public class ActiveMQReceiverHandlerTest {
         assertTrue(receivedMessages.contains("b"));
         assertTrue(receivedMessages.contains("d"));
         assertEquals(3, receivedMessages.size());
-        assertTrue(receivedExceptions.size()==0);
+        assertTrue(receivedExceptions.size() == 0);
         h.stop();
     }
 }

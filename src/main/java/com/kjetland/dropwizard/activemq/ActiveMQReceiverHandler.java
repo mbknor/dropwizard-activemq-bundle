@@ -4,6 +4,7 @@ import com.codahale.metrics.health.HealthCheck;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kjetland.dropwizard.activemq.errors.JsonError;
 import io.dropwizard.lifecycle.Managed;
+import org.apache.activemq.ActiveMQMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         log.info("Stopped receiver for " + destination);
     }
 
-    private void processMessage(Message message) {
+    private void processMessage(ActiveMQMessageConsumer messageConsumer, Message message) {
         String json = null;
         try {
 
@@ -112,6 +113,12 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                     message.acknowledge();
                 } catch (JMSException x) {
                     throw new RuntimeException(x);
+                }
+            } else {
+                try {
+                    messageConsumer.rollback();
+                } catch (JMSException e1) {
+                    throw new RuntimeException("Error rollbacking failed message", e1);
                 }
             }
         }
@@ -150,7 +157,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                     try {
 
                         final Destination d = destinationCreator.create(session, destination);
-                        final MessageConsumer messageConsumer = session.createConsumer(d);
+                        final ActiveMQMessageConsumer messageConsumer = (ActiveMQMessageConsumer)session.createConsumer(d);
                         try {
 
                             if (verboseInitLogging) {
@@ -204,7 +211,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         log.debug("Message-checker-thread stopped");
     }
 
-    private void runReceiveLoop(MessageConsumer messageConsumer) throws JMSException {
+    private void runReceiveLoop(ActiveMQMessageConsumer messageConsumer) throws JMSException {
         while(!shouldStop.get()) {
             if (log.isDebugEnabled()) {
                 log.debug("Checking for new message");
@@ -212,7 +219,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
             Message message = messageConsumer.receive(200);
             errorsInARowCount = 0;
             if (message != null) {
-                processMessage(message);
+                processMessage(messageConsumer, message);
             }
         }
     }
