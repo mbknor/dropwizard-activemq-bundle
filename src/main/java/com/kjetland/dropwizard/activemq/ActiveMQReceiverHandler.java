@@ -109,7 +109,9 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                 throw new Exception("Do not know how to handle messages of type " + message.getClass());
             }
 
-            log.info("Received " + json);
+            if (log.isDebugEnabled()) {
+                log.debug("Received " + json);
+            }
 
             if ( receiverType.equals(String.class)) {
                 // pass the string as is
@@ -216,7 +218,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
                 // Prevent using too much CPU when stuff does not work
                 if (continuingErrorSituation) {
-                    log.info("Numbers of errors in a row {} - Going to sleep {} mills before retrying", errorsInARowCount, SLEEP_TIME_MILLS);
+                    log.warn("Numbers of errors in a row {} - Going to sleep {} mills before retrying", errorsInARowCount, SLEEP_TIME_MILLS);
                     ActiveMQUtils.silent(() -> Thread.sleep(SLEEP_TIME_MILLS));
                 }
             }
@@ -242,10 +244,10 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
     private void runReceiveLoop(ActiveMQMessageConsumer messageConsumer) throws JMSException {
         while(!shouldStop.get()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Checking for new message");
+            if (log.isTraceEnabled()) {
+                log.trace("Checking for new message");
             }
-            Message message = messageConsumer.receive(200);
+            Message message = messageConsumer.receive(400);
             errorsInARowCount = 0;
             if (message != null) {
                 processMessage(messageConsumer, message);

@@ -62,7 +62,9 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
     }
 
     private void internalSend(String json) throws JMSException {
-        log.info("Sending to {}: {}", destination, json);
+        if (log.isDebugEnabled()) {
+            log.debug("Sending to {}: {}", destination, json);
+        }
         internalSend( session -> {
             final TextMessage textMessage = session.createTextMessage(json);
             textMessage.setText(json);
