@@ -21,6 +21,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     private Environment environment;
     private long shutdownWaitInSeconds;
     private Optional<Integer> defaultTimeToLiveInSeconds;
+    public static final ThreadLocal<String> correlationID = new ThreadLocal<>();
 
     public ActiveMQBundle() {
 
