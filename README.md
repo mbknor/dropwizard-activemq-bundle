@@ -10,7 +10,7 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.9**
+Current version is: **0.3.10**
 
 Version 0.3.10
 
