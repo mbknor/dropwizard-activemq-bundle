@@ -68,6 +68,10 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
         internalSend( session -> {
             final TextMessage textMessage = session.createTextMessage(json);
             textMessage.setText(json);
+            String correlationId = ActiveMQBundle.correlationID.get();
+            if (textMessage.getJMSCorrelationID() == null && correlationId != null) {
+                textMessage.setJMSCorrelationID(correlationId);
+            }
             return textMessage;
         } );
     }

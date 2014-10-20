@@ -102,7 +102,9 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private void processMessage(ActiveMQMessageConsumer messageConsumer, Message message) {
         String json = null;
         try {
-
+            // keep track of the correlationID of the message in the scope of processMessage()
+            // the ActiveMQSenderImpl can insert it if correlationID has not already been set
+            ActiveMQBundle.correlationID.set(message.getJMSCorrelationID());
             if (message instanceof TextMessage) {
                 json = ((TextMessage) message).getText();
             } else {
@@ -136,6 +138,9 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                     throw new RuntimeException("Error rollbacking failed message", e1);
                 }
             }
+        } finally {
+            // The correlationID is only valid within the scope of processMessage()
+            ActiveMQBundle.correlationID.remove();
         }
     }
 
