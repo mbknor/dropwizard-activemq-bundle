@@ -117,6 +117,8 @@ public class ActiveMQReceiverHandlerTest {
 
 
         TextMessage msg = mock(TextMessage.class);
+        Enumeration enumeration = mock(Enumeration.class);
+        when(msg.getPropertyNames()).thenReturn(enumeration);
         when(msg.getText()).thenReturn(m);
         return msg;
     }
@@ -130,10 +132,10 @@ public class ActiveMQReceiverHandlerTest {
     @Test
     public void testNormal() throws Exception {
         setUpMocks(Arrays.asList(null, "a", "b", null, "d"));
-        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
+        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<String>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage((String)m),
+                (m,p)->receiveMessage((String)m),
                 String.class,
                 objectMapper,
                 (m,e) -> exceptionHandler(m,e),
@@ -155,10 +157,10 @@ public class ActiveMQReceiverHandlerTest {
     @Test
     public void testExceptionInReceiver() throws Exception {
         setUpMocks(Arrays.asList(null, "a", THROW_EXCEPTION_IN_RECEIVER, "b", null, "d"));
-        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
+        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<String>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage((String)m),
+                (m,p)->receiveMessage((String)m),
                 String.class,
                 objectMapper,
                 (m,e) -> exceptionHandler(m,e),
@@ -181,10 +183,10 @@ public class ActiveMQReceiverHandlerTest {
     public void testExceptionInMessageConsumer() throws Exception {
 
         setUpMocks(Arrays.asList(null, "a", THROW_EXCEPTION_IN_CONSUMER, "b", null, "d"));
-        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
+        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<String>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage(m),
+                (m,p)->receiveMessage(m),
                 String.class,
                 objectMapper,
                 (m,e) -> exceptionHandler(m,e),
@@ -208,10 +210,10 @@ public class ActiveMQReceiverHandlerTest {
 
         setUpMocks(Arrays.asList(null, "a", THROW_EXCEPTION_IN_CONSUMER_CLOSED, "b", null, "d",
                 THROW_EXCEPTION_IN_CONSUMER_CLOSED, THROW_EXCEPTION_IN_CONSUMER_CLOSED));
-        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
+        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<String>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage(m),
+                (m,p)->receiveMessage(m),
                 String.class,
                 objectMapper,
                 (m,e) -> exceptionHandler(m, e),
