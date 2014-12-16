@@ -7,6 +7,14 @@
     <artifactId>dropwizard-activemq</artifactId>
     <version>0.3.11-SNAPSHOT</version>
 
+    <licenses>
+      <license>
+        <name>ASF v2 License</name>
+        <url>LICENSE.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+    
     <properties>
         <dropwizard.version>0.7.1</dropwizard.version>
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
