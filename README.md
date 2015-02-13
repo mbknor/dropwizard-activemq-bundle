@@ -132,7 +132,9 @@ activeMQ:
 ```yaml
 
 activeMQ:
-  brokerUrl: failover:(tcp://boker1.com:61616,tcp://broker2.com:61616)?randomize=false
+  brokerUrl: failover:(tcp://broker1.com:61616,tcp://broker2.com:61616)?randomize=false
+  # brokerUsername: username
+  # brokerPassword: password
   # shutdownWaitInSeconds: 20
   # healthCheckMillisecondsToWait: 2000
   # timeToLiveInSeconds: -1     (Default message time-to-live is off. Specify a maximum lifespan here in seconds for all messages.)
@@ -255,3 +257,7 @@ activeMQBundle.registerReceiver(
     });
 ```
 
+Connecting to secure brokers
+----------------------------
+
+Connecting to a secure broker is possible by setting both the username (brokerUsername) and password (brokerPassword) in an application's config file.
