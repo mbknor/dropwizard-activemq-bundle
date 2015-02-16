@@ -32,6 +32,8 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         this.environment = environment;
         final String brokerUrl = configuration.getActiveMQ().brokerUrl;
         final int configuredTTL = configuration.getActiveMQ().timeToLiveInSeconds;
+        final Optional<String> username = Optional.ofNullable(configuration.getActiveMQ().brokerUsername);
+        final Optional<String> password = Optional.ofNullable(configuration.getActiveMQ().brokerPassword);
         defaultTimeToLiveInSeconds = Optional.ofNullable(configuredTTL > 0 ? configuredTTL : null);
 
         log.info("Setting up activeMq with brokerUrl {}", brokerUrl);
@@ -39,6 +41,10 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         log.debug("All activeMQ config: " + configuration.getActiveMQ());
 
         realConnectionFactory = new ActiveMQConnectionFactory(brokerUrl);
+        if (username.isPresent() && password.isPresent()) {
+            realConnectionFactory.setUserName(username.get());
+            realConnectionFactory.setPassword(password.get());
+        }
         connectionFactory = new PooledConnectionFactory();
         connectionFactory.setConnectionFactory(realConnectionFactory);
 

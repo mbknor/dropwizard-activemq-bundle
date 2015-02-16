@@ -12,6 +12,12 @@ public class ActiveMQConfig {
     public String brokerUrl;
 
     @JsonProperty
+    public String brokerUsername;
+
+    @JsonProperty
+    public String brokerPassword;
+
+    @JsonProperty
     public long healthCheckMillisecondsToWait = 2000; // 2 seconds
 
     @JsonProperty
@@ -31,6 +37,8 @@ public class ActiveMQConfig {
                 ", healthCheckMillisecondsToWait=" + healthCheckMillisecondsToWait +
                 ", shutdownWaitInSeconds=" + shutdownWaitInSeconds +
                 ", timeToLiveInSeconds=" + timeToLiveInSeconds +
+                ", brokerUsername=" + brokerUsername +
+                ", brokerPassword=" + brokerPassword +
                 ", pool=" + pool +
                 '}';
     }
