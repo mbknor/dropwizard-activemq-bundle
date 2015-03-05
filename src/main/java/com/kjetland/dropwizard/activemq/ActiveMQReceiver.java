@@ -1,6 +1,13 @@
 package com.kjetland.dropwizard.activemq;
 
-public interface ActiveMQReceiver<T> {
+import java.util.Properties;
 
-    public void receive(T message);
+public interface ActiveMQReceiver<T> extends ActiveMQBaseReceiver<T> {
+
+    @Override
+    default void receive(T message, Properties messageProperties) {
+        receive(message);
+    }
+
+    void receive(T message);
 }

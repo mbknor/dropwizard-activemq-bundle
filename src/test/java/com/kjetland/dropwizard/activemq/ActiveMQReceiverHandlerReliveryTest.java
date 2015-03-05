@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Optional;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
@@ -75,10 +76,10 @@ public class ActiveMQReceiverHandlerReliveryTest {
 
         ObjectMapper objectMapper = new ObjectMapper();
 
-        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
+        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<String>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage(m),
+                (m,p)->receiveMessage(m),
                 String.class,
                 objectMapper,
                 (m,e) -> exceptionHandler(m,e),

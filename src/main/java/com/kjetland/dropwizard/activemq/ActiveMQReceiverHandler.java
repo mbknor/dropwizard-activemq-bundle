@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import javax.jms.*;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
 
@@ -32,7 +35,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private final String destination;
     private final ConnectionFactory connectionFactory;
     private final Class<? extends T> receiverType;
-    private final ActiveMQReceiver<T> receiver;
+    private final ActiveMQBaseReceiver<T> receiver;
     private final ObjectMapper objectMapper;
     private final Thread thread;
     private AtomicBoolean shouldStop = new AtomicBoolean(false);
@@ -46,7 +49,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     public ActiveMQReceiverHandler(
             String destination,
             ConnectionFactory connectionFactory,
-            ActiveMQReceiver<T> receiver,
+            ActiveMQBaseReceiver<T> receiver,
             Class<? extends T> receiverType,
             ObjectMapper objectMapper,
             ActiveMQBaseExceptionHandler exceptionHandler,
@@ -66,7 +69,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     public ActiveMQReceiverHandler(
             String destination,
             ConnectionFactory connectionFactory,
-            ActiveMQReceiver<T> receiver,
+            ActiveMQBaseReceiver<T> receiver,
             Class<? extends T> receiverType,
             ObjectMapper objectMapper,
             ActiveMQExceptionHandler exceptionHandler,
@@ -114,13 +117,13 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
             if (log.isDebugEnabled()) {
                 log.debug("Received " + json);
             }
-
+            final Properties messageProperties = getMessageProperties(message);
             if ( receiverType.equals(String.class)) {
                 // pass the string as is
-                receiver.receive((T)json);
+                receiver.receive((T)json, messageProperties);
             } else {
                 T object = fromJson(json);
-                receiver.receive(object);
+                receiver.receive(object, messageProperties);
             }
 
             message.acknowledge();
@@ -232,6 +235,21 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
         log.debug("Message-checker-thread stopped");
     }
 
+    Properties getMessageProperties(final Message message) {
+        final Properties properties = new Properties();
+        try {
+            Collections.list(message.getPropertyNames()).stream().forEach((Consumer<String>) propertyName -> {
+                try {
+                    properties.put(propertyName, message.getObjectProperty(propertyName));
+                } catch (JMSException e) {
+                    throw new RuntimeException(String.format("Unable to get property. [propertyName=%s]", propertyName), e);
+                }
+            });
+        } catch (JMSException e) {
+            throw new RuntimeException("Unable to get enumeration of property names.", e);
+        }
+        return properties;
+    }
 
     private ActiveMQMessageConsumer convertToActiveMQMessageConsumer(MessageConsumer rawMessageConsumer) {
         if ( rawMessageConsumer instanceof ActiveMQMessageConsumer) {
