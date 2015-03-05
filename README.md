@@ -10,7 +10,12 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.10**
+Current version is: **0.3.11**
+
+Version 0.3.11
+
+* Added support for connecting to secure brokers
+* Upgraded to ActiveMQ client version 5.11.1
 
 Version 0.3.10
 
