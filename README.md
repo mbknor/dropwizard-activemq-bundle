@@ -10,7 +10,11 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.11**
+Current version is: **0.3.12**
+
+Version 0.3.12
+
+* Added support for receiving ActiveMQMapMessage as java.util.Map
 
 Version 0.3.11
 
