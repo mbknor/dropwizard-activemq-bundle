@@ -10,7 +10,11 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.12**
+Current version is: **0.3.13**
+
+Version 0.3.13
+
+* Upgraded to Dropwizard 0.9.1 and ActiveMQ 5.13.0
 
 Version 0.3.12
 
