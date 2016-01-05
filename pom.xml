@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.kjetland.dropwizard</groupId>
     <artifactId>dropwizard-activemq</artifactId>
-    <version>0.3.13-SNAPSHOTgi</version>
+    <version>0.3.13-SNAPSHOT</version>
 
     <licenses>
       <license>
@@ -16,9 +16,9 @@
     </licenses>
     
     <properties>
-        <dropwizard.version>0.7.1</dropwizard.version>
+        <dropwizard.version>0.9.1</dropwizard.version>
         <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
-        <activemq.version>5.11.1</activemq.version>
+        <activemq.version>5.13.0</activemq.version>
         <mockito.version>1.9.5</mockito.version>
         <junit.version>4.11</junit.version>
     </properties>
