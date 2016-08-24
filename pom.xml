@@ -5,7 +5,22 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.kjetland.dropwizard</groupId>
     <artifactId>dropwizard-activemq</artifactId>
-    <version>0.3.14-SNAPSHOT</version>
+    <version>0.4.0</version>
+
+    <name>dropwizard-activemq</name>
+    <url>https://github.com/mbknor/dropwizard-activemq-bundle</url>
+    <description>
+        Use it when you need to send and receive JSON via ActiveMQ in your Dropwizard application
+    </description>
+
+    <developers>
+        <developer>
+            <id>mbknor</id>
+            <name>Morten Kjetland</name>
+            <email>mbk@kjetland.com</email>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
 
     <licenses>
       <license>
@@ -59,6 +74,13 @@
         </dependency>
     </dependencies>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 
     <build>
         <plugins>
@@ -105,24 +127,62 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
-    <repositories>
-        <repository>
-            <id>mbknor</id>
-            <name>mbknor</name>
-            <url>https://raw.githubusercontent.com/mbknor/mbknor.github.com/master/m2repo/releases/</url>
-        </repository>
-    </repositories>
-
-    <distributionManagement>
-        <repository>
-            <id>mbk_mvn_repo</id>
-            <layout>default</layout>
-            <name>mbk_mvn_repo</name>
-            <url>file:///projects/git/mbknor.github.com/m2repo/releases</url>
-        </repository>
-    </distributionManagement>
+    <scm>
+        <connection>scm:git:git@github.com:mbknor/dropwizard-activemq-bundle.git</connection>
+        <developerConnection>scm:git:git@github.com:mbknor/dropwizard-activemq-bundle.git</developerConnection>
+        <url>http://github.com/mbknor/dropwizard-activemq-bundle</url>
+    </scm>
 
 </project>

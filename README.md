@@ -1,5 +1,6 @@
 Dropwizard ActiveMQ Bundle
 ==================================
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.kjetland.dropwizard/dropwizard-activemq/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cdropwizard-activemq)
 
 *Since Dropwizard ActiveMQ Bundle is written in Java 8, your app must also be compiled with Java 8 (But you can of course still use Dropwizard which is not Java 8).*
 
@@ -10,7 +11,12 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 -------
 
-Current version is: **0.3.13**
+Current version is: **0.4.0**
+
+Version 0.4.0
+
+* First version released to Maven Central
+* Code is identical to version 0.3.13
 
 Version 0.3.13
 
@@ -96,18 +102,6 @@ Add it as a dependency:
         <artifactId>dropwizard-activemq</artifactId>
         <version> INSERT LATEST VERSION HERE </version>
     </dependency>
-```
-
-Since this project is hosted on my own maven repo here on github, you also have to add this to your pom:
-
-```xml
-<repositories>
-    <repository>
-        <id>mbknor</id>
-        <name>mbknor</name>
-        <url>https://raw.githubusercontent.com/mbknor/mbknor.github.com/master/m2repo/releases</url>
-    </repository>
-</repositories>
 ```
 
 Configuration
