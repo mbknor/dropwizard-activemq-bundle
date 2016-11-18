@@ -12,9 +12,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
+import static java.lang.String.format;
+
 public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private String healthCheckName = "ActiveMQ";
     private ActiveMQConnectionFactory realConnectionFactory;
     private PooledConnectionFactory connectionFactory = null;
     private ObjectMapper objectMapper;
@@ -24,21 +27,28 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     public static final ThreadLocal<String> correlationID = new ThreadLocal<>();
 
     public ActiveMQBundle() {
+    }
 
+    public ActiveMQBundle(String brokerName) {
+        this.healthCheckName = format("%s_%s", healthCheckName, brokerName);
     }
 
     @Override
-    public void run(ActiveMQConfigHolder configuration, Environment environment) throws Exception {
+    public void run(ActiveMQConfigHolder configuration, Environment environment) {
+        init(configuration.getActiveMQ(), environment);
+    }
+
+    public void init(ActiveMQConfig activeMQConfig, Environment environment) {
         this.environment = environment;
-        final String brokerUrl = configuration.getActiveMQ().brokerUrl;
-        final int configuredTTL = configuration.getActiveMQ().timeToLiveInSeconds;
-        final Optional<String> username = Optional.ofNullable(configuration.getActiveMQ().brokerUsername);
-        final Optional<String> password = Optional.ofNullable(configuration.getActiveMQ().brokerPassword);
+        final String brokerUrl = activeMQConfig.brokerUrl;
+        final int configuredTTL = activeMQConfig.timeToLiveInSeconds;
+        final Optional<String> username = Optional.ofNullable(activeMQConfig.brokerUsername);
+        final Optional<String> password = Optional.ofNullable(activeMQConfig.brokerPassword);
         defaultTimeToLiveInSeconds = Optional.ofNullable(configuredTTL > 0 ? configuredTTL : null);
 
         log.info("Setting up activeMq with brokerUrl {}", brokerUrl);
 
-        log.debug("All activeMQ config: " + configuration.getActiveMQ());
+        log.debug("All activeMQ config: " + activeMQConfig);
 
         realConnectionFactory = new ActiveMQConnectionFactory(brokerUrl);
         if (username.isPresent() && password.isPresent()) {
@@ -48,7 +58,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         connectionFactory = new PooledConnectionFactory();
         connectionFactory.setConnectionFactory(realConnectionFactory);
 
-        configurePool(configuration.getActiveMQ().pool);
+        configurePool(activeMQConfig.pool);
 
         objectMapper = environment.getObjectMapper();
 
@@ -57,12 +67,10 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         // Must use realConnectionFactory instead of (pooled) connectionFactory for the healthCheck
         // Is needs its own connection since it is both sending and receiving.
         // If using pool, then it might block since no one is available..
-        environment.healthChecks().register("ActiveMQ",
-                new ActiveMQHealthCheck(
-                        realConnectionFactory,
-                        configuration.getActiveMQ().healthCheckMillisecondsToWait)
+        environment.healthChecks().register(healthCheckName,
+            new ActiveMQHealthCheck(realConnectionFactory, activeMQConfig.healthCheckMillisecondsToWait)
         );
-        this.shutdownWaitInSeconds = configuration.getActiveMQ().shutdownWaitInSeconds;
+        this.shutdownWaitInSeconds = activeMQConfig.shutdownWaitInSeconds;
     }
 
     private void configurePool(ActiveMQPoolConfig poolConfig) {
@@ -106,13 +114,13 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         log.info("Starting activeMQ client");
         connectionFactory.start();
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         log.info("Stopping activeMQ client");
         connectionFactory.stop();
     }

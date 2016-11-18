@@ -38,5 +38,4 @@ You will then see that the animal is received from the browser, sent to ActiveMQ
     Animal{type='dog', name='Nemi', age=7}
     *****
 
-
 That's it..
