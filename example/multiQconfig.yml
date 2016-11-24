@@ -1,0 +1,6 @@
+activeMQConnections:
+  ieQueue:
+      brokerUrl: tcp://localhost:61616
+  gbQueue:
+      brokerUrl: tcp://localhost:61626
+

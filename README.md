@@ -2,17 +2,21 @@ Dropwizard ActiveMQ Bundle
 ==================================
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.kjetland.dropwizard/dropwizard-activemq/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cdropwizard-activemq)
 
-*Since Dropwizard ActiveMQ Bundle is written in Java 8, your app must also be compiled with Java 8 (But you can of course still use Dropwizard which is not Java 8).*
+*Since Dropwizard ActiveMQ Bundle is written in Java 8, your app must also be compiled with Java 8*
 
-Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dropwizard 0.7.1 application.
+Use it when you need to send and receive JSON (jackson) via ActiveMq in your Dropwizard application.
 
 Please have a look at the [Example application](https://github.com/mbknor/dropwizard-activemq-bundle/tree/master/example).
 
 Change History
--------
-
+--------------
 Current version is: **0.4.0**
 
+Version 0.5.0
+
+* Add support to connect to multiple activeMq brokers
+* Upgraded to Dropwizard 1.0.2 and ActiveMQ 5.14.1
+-
 Version 0.4.0
 
 * First version released to Maven Central
@@ -268,3 +272,56 @@ Connecting to secure brokers
 ----------------------------
 
 Connecting to a secure broker is possible by setting both the username (brokerUsername) and password (brokerPassword) in an application's config file.
+
+Connecting to multiple brokers
+------------------------------
+
+The library has a second bundle that enables a dropwizard application to connect to multiple brokers. 
+This bundle will correctly register multiple healthchecks for each queue created, differentiating them using the brokerName given in the config
+
+Usage is the same with the following changes:
+
+(Please have a look at the [Multi Broker Example application](https://github.com/mbknor/dropwizard-activemq-bundle/tree/master/example/MultiQExampleApp.java))
+
+```java
+// Create the multi bundle and store reference to it
+    this.activeMQBundle = new ActiveMQMultiBundle();
+// Add the bundle
+    configBootstrap.addBundle(activeMQBundle);
+
+
+public void run(MultiQConfig config, Environment environment) throws Exception {
+        MultiQResource multiQResource = new MultiQResource();
+        environment.jersey().register(multiQResource);
+        activeMQBundle.getActiveMQBundleMap().entrySet()
+            .stream()
+            .forEach(activeMQEntry->activateQueue(multiQResource, activeMQEntry));
+}
+
+private void activateQueue(MultiQResource multiQResource, Map.Entry<String, ActiveMQBundle> activeMQEntry) {
+    String queueName = activeMQEntry.getKey();
+    ActiveMQBundle activeMQBundle = activeMQEntry.getValue();
+
+    // Set up the sender for our queue
+    multiQResource.addSender(queueName, activeMQBundle.createSender( queueName, false));
+
+    // Set up a receiver that just logs the messages we receive on our queue
+    activeMQBundle.registerReceiver(
+        queueName,
+        (message) -> log.info("\n*****\nWe received a message on: {} from activeMq: \n{}\n*****", queueName, message),
+        Message.class,
+        true);
+}
+```
+
+In a real application you will have to handle which messages are sent / received to which broker based on your requirements. 
+The broker name will be your identification key for the mappings 
+
+You should use the MultiQConfig which is a map of ActiveMQConfig configs
+```yaml
+activeMQConnections:
+  ieQueue:
+      brokerUrl: tcp://localhost:61616
+  gbQueue:
+      brokerUrl: tcp://localhost:61626
+```
