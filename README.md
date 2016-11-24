@@ -15,7 +15,7 @@ Version 0.5.0
 
 * Add support to connect to multiple activeMq brokers
 * Upgraded to Dropwizard 1.0.2 and ActiveMQ 5.14.1
--
+
 Version 0.4.0
 
 * First version released to Maven Central
