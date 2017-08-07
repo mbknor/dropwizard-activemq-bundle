@@ -11,6 +11,10 @@ Please have a look at the [Example application](https://github.com/mbknor/dropwi
 Change History
 --------------
 
+Version 0.5.1
+
+* Fixing sporadic issue where "session is closed" when ack'ing received message
+
 Version 0.5.0
 
 * Add support to connect to multiple activeMq brokers

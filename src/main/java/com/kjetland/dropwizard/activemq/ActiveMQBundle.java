@@ -139,7 +139,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
 
         ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
                 destination,
-                connectionFactory,
+                realConnectionFactory,
                 receiver,
                 clazz,
                 objectMapper,
@@ -169,7 +169,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
 
         ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
                 destination,
-                connectionFactory,
+                realConnectionFactory,
                 receiver,
                 clazz,
                 objectMapper,
