@@ -14,7 +14,7 @@ import java.util.Optional;
 
 import static java.lang.String.format;
 
-public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory {
+public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, Managed, ActiveMQSenderFactory, ActiveMQReceiverHandlerFactory {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     private String healthCheckName = "ActiveMQ";
@@ -134,10 +134,18 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
     }
 
     // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
-                                     final boolean ackMessageOnException) {
+    public <T> void registerReceiver(ActiveMQReceiverHandler<T> handler) {
+        internalRegisterReceiver(handler);
+    }
 
-        ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
+    private <T> void internalRegisterReceiver(ActiveMQReceiverHandler<T> handler) {
+        environment.lifecycle().manage(handler);
+        environment.healthChecks().register("ActiveMQ receiver for " + handler.getDestination(), handler.getHealthCheck());
+    }
+
+    @Override
+    public <T> ActiveMQReceiverHandler<T> createHandler(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, boolean ackMessageOnException) {
+        return new ActiveMQReceiverHandler<>(
                 destination,
                 realConnectionFactory,
                 receiver,
@@ -154,20 +162,11 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
                 },
                 shutdownWaitInSeconds
         );
-
-        internalRegisterReceiver(destination, handler);
     }
 
-    private <T> void internalRegisterReceiver(String destination, ActiveMQReceiverHandler<T> handler) {
-        environment.lifecycle().manage(handler);
-        environment.healthChecks().register("ActiveMQ receiver for " + destination, handler.getHealthCheck());
-    }
-
-    // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
-                                     ActiveMQBaseExceptionHandler exceptionHandler) {
-
-        ActiveMQReceiverHandler<T> handler = new ActiveMQReceiverHandler<>(
+    @Override
+    public <T> ActiveMQReceiverHandler<T> createHandler(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz, ActiveMQBaseExceptionHandler exceptionHandler) {
+        return new ActiveMQReceiverHandler<>(
                 destination,
                 realConnectionFactory,
                 receiver,
@@ -175,13 +174,5 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
                 objectMapper,
                 exceptionHandler,
                 shutdownWaitInSeconds);
-
-        internalRegisterReceiver(destination, handler);
-    }
-
-    // This must be used during run-phase
-    public <T> void registerReceiver(String destination, ActiveMQReceiver<T> receiver, Class<? extends T> clazz,
-                                     ActiveMQExceptionHandler exceptionHandler) {
-        registerReceiver(destination, receiver, clazz, (ActiveMQBaseExceptionHandler) exceptionHandler);
     }
 }

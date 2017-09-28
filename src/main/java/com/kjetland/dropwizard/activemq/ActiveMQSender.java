@@ -8,4 +8,5 @@ public interface ActiveMQSender {
     void sendJson(String json);
     void send(Object object);
     void send(JMSFunction<Session, Message> messageCreator);
+    void addFilter(SenderFilter senderFilter);
 }

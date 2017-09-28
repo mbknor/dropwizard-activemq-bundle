@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.kjetland.dropwizard</groupId>
     <artifactId>dropwizard-activemq</artifactId>
-    <version>0.5.2-SNAPSHOT</version>
+    <version>0.5.2-NOVAMEDIA-SNAPSHOT</version>
 
     <name>dropwizard-activemq</name>
     <url>https://github.com/mbknor/dropwizard-activemq-bundle</url>
@@ -140,20 +140,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.5</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
                 <version>1.6.7</version>
@@ -168,9 +154,9 @@
     </build>
 
     <scm>
-        <connection>scm:git:git@github.com:mbknor/dropwizard-activemq-bundle.git</connection>
-        <developerConnection>scm:git:git@github.com:mbknor/dropwizard-activemq-bundle.git</developerConnection>
-        <url>http://github.com/mbknor/dropwizard-activemq-bundle</url>
+        <connection>scm:git:git@github.com:novamediasverige/dropwizard-activemq-bundle.git</connection>
+        <developerConnection>scm:git:git@github.com:novamediasverige/dropwizard-activemq-bundle.git</developerConnection>
+        <url>http://github.com/novamediasverige/dropwizard-activemq-bundle</url>
     </scm>
 
 </project>
