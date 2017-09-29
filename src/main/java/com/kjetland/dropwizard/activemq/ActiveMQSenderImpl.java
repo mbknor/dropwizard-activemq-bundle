@@ -13,6 +13,8 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +27,7 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
     private final Optional<Integer> timeToLiveInSeconds;
     private final boolean persistent;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
-
+    private final Collection<SenderFilter> senderFilters = new ArrayList<>();
 
     public ActiveMQSenderImpl(ConnectionFactory connectionFactory, ObjectMapper objectMapper, String destination,
                               Optional<Integer> timeToLiveInSeconds, boolean persistent) {
@@ -42,11 +44,9 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
 
             final String json = objectMapper.writeValueAsString(object);
             internalSend(json);
-
         } catch (Exception e) {
             throw new RuntimeException("Error sending to jms", e);
         }
-
     }
 
     @Override
@@ -54,26 +54,25 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
         try {
 
             internalSend(json);
-
         } catch (Exception e) {
             throw new RuntimeException("Error sending to jms", e);
         }
-
     }
 
     private void internalSend(String json) throws JMSException {
         if (log.isDebugEnabled()) {
             log.debug("Sending to {}: {}", destination, json);
         }
-        internalSend( session -> {
+        internalSend(session -> {
             final TextMessage textMessage = session.createTextMessage(json);
             textMessage.setText(json);
             String correlationId = ActiveMQBundle.correlationID.get();
             if (textMessage.getJMSCorrelationID() == null && correlationId != null) {
                 textMessage.setJMSCorrelationID(correlationId);
             }
+            senderFilters.forEach(senderFilter -> senderFilter.apply(textMessage));
             return textMessage;
-        } );
+        });
     }
 
     private void internalSend(JMSFunction<Session, Message> messageCreator) throws JMSException {
@@ -98,19 +97,15 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
 
                     final Message message = messageCreator.apply(session);
                     messageProducer.send(message);
-
                 } finally {
                     ActiveMQUtils.silent(() -> messageProducer.close());
                 }
             } finally {
                 ActiveMQUtils.silent(() -> session.close());
             }
-
         } finally {
             ActiveMQUtils.silent(() -> connection.close());
         }
-
-
     }
 
     @Override
@@ -121,8 +116,13 @@ public class ActiveMQSenderImpl implements ActiveMQSender {
 
         try {
             internalSend(messageCreator);
-        } catch ( JMSException jmsException) {
+        } catch (JMSException jmsException) {
             throw new RuntimeException("Error sending to jms", jmsException);
         }
+    }
+
+    @Override
+    public void addFilter(SenderFilter senderFilter) {
+        senderFilters.add(senderFilter);
     }
 }

@@ -10,9 +10,18 @@ import org.apache.activemq.jms.pool.PooledMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,6 +51,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private final ActiveMQBaseExceptionHandler exceptionHandler;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
     protected final long shutdownWaitInSeconds;
+    private final Collection<ReceiverFilter> receiverFilters = new ArrayList<>();
 
     protected int errorsInARowCount = 0;
 
@@ -104,6 +114,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private void processMessage(ActiveMQMessageConsumer messageConsumer, Message message) {
         String json = null;
         try {
+            receiverFilters.forEach(receiverFilter -> receiverFilter.apply(message));
             // keep track of the correlationID of the message in the scope of processMessage()
             // the ActiveMQSenderImpl can insert it if correlationID has not already been set
             ActiveMQBundle.correlationID.set(message.getJMSCorrelationID());
@@ -283,6 +294,14 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                 }
             }
         };
+    }
+
+    public void addRecieverFilter(ReceiverFilter filter) {
+        receiverFilters.add(filter);
+    }
+
+    public String getDestination() {
+        return destination;
     }
 
 }
