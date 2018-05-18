@@ -1,29 +1,27 @@
 package com.kjetland.dropwizard.activemq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Sets;
 import org.apache.activemq.ActiveMQMessageConsumer;
+import org.apache.activemq.command.ActiveMQObjectMessage;
 import org.eclipse.jetty.util.ConcurrentHashSet;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.internal.verification.VerificationModeFactory;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.verification.VerificationMode;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.MessageConsumer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
+import javax.jms.*;
+import javax.validation.Payload;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
@@ -33,7 +31,6 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,13 +64,13 @@ public class ActiveMQReceiverHandlerTest {
     ObjectMapper objectMapper;
 
     int messageIndex = 0;
-    List<String> messagesList;
+    List<Object> messagesList;
 
     Set<String> receivedMessages = new ConcurrentHashSet<>();
     Set<Throwable> receivedExceptions = new ConcurrentHashSet<>();
 
 
-    public void setUpMocks(List<String> messages) throws Exception {
+    public void setUpMocks(Object... messages) throws Exception {
         when(connectionFactory.createConnection()).thenReturn(connection);
         when(connection.createSession(anyBoolean(), anyInt())).thenReturn(session);
         when(session.createQueue(anyString())).thenReturn(destinationQueue);
@@ -82,7 +79,7 @@ public class ActiveMQReceiverHandlerTest {
         when(session.createConsumer(eq(destinationTopic))).thenReturn(messageConsumer);
 
         messageIndex = 0;
-        messagesList = messages;
+        messagesList = Arrays.asList(messages);
         when(messageConsumer.receive(anyLong())).then( (i) -> popMessage());
         receivedMessages.clear();
         receivedExceptions.clear();
@@ -95,9 +92,9 @@ public class ActiveMQReceiverHandlerTest {
         receivedMessages.add(m);
     }
 
-    private TextMessage popMessage() throws Exception {
+    private Message popMessage() throws Exception {
 
-        String m = messagesList.get(messageIndex);
+        Object m = messagesList.get(messageIndex);
         messageIndex++;
         if ( messageIndex>= messagesList.size()) {
             messageIndex = 0;
@@ -116,9 +113,17 @@ public class ActiveMQReceiverHandlerTest {
         }
 
 
-        TextMessage msg = mock(TextMessage.class);
-        when(msg.getText()).thenReturn(m);
-        return msg;
+        if (m instanceof String) {
+            TextMessage msg = mock(TextMessage.class);
+            when(msg.getText()).thenReturn((String) m);
+            return msg;
+        }
+        else if (m instanceof ActiveMQObjectMessage) {
+            return (ActiveMQObjectMessage) m;
+        }
+        else {
+            throw new IllegalArgumentException("Message type " +  m.getClass()+ " is not supported yet");
+        }
     }
 
     public boolean exceptionHandler(String message, Exception exception) {
@@ -129,7 +134,7 @@ public class ActiveMQReceiverHandlerTest {
 
     @Test
     public void testNormal() throws Exception {
-        setUpMocks(Arrays.asList(null, "a", "b", null, "d"));
+        setUpMocks(null, "a", "b", null, "d");
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
@@ -152,9 +157,109 @@ public class ActiveMQReceiverHandlerTest {
 
     }
 
+    static class MessagePayload implements  Serializable {
+        private final String payLoad;
+
+        MessagePayload(String payLoad) {
+            this.payLoad = payLoad;
+        }
+    }
+
+    @Test
+    public void testThatActiveMQObjectMessageIsSupported() throws Exception {
+        final ActiveMQObjectMessage OBJECT_MESSAGE = new ActiveMQObjectMessage();
+        MessagePayload OBJECT = new MessagePayload("Some data");
+        OBJECT_MESSAGE.setObject(OBJECT);
+
+        Set<Throwable> RECEIVED_EXCEPTIONS = new CopyOnWriteArraySet<>();
+        AtomicReference<MessagePayload> RECEIVED_OBJECT = new AtomicReference<>();
+
+        setUpMocks(OBJECT_MESSAGE);
+        ActiveMQReceiverHandler<MessagePayload> h = new ActiveMQReceiverHandler<>(
+                destinationName,
+                connectionFactory,
+                RECEIVED_OBJECT::set,
+                MessagePayload.class,
+                objectMapper,
+                (m,e) -> RECEIVED_EXCEPTIONS.add(e),
+                1);
+
+        h.start();
+        Thread.sleep(300);
+        RECEIVED_EXCEPTIONS.forEach(Throwables::propagate);
+        assertNotNull(RECEIVED_OBJECT.get());
+        assertEquals(OBJECT, RECEIVED_OBJECT.get());
+        h.stop();
+
+    }
+
+    private static class ExtendedPayload extends MessagePayload {
+
+        private String extraData = "EXTRA_DATA";
+
+        ExtendedPayload(String payLoad) {
+            super(payLoad);
+        }
+    }
+
+    @Test
+    public void testThatCanReceiveObjectsOfSubtype() throws Exception {
+        final ActiveMQObjectMessage OBJECT_MESSAGE = new ActiveMQObjectMessage();
+        ExtendedPayload OBJECT = new ExtendedPayload("Some data");
+        OBJECT_MESSAGE.setObject(OBJECT);
+
+        Set<Throwable> RECEIVED_EXCEPTIONS = new CopyOnWriteArraySet<>();
+        AtomicReference<MessagePayload> RECEIVED_OBJECT = new AtomicReference<>();
+
+        setUpMocks(OBJECT_MESSAGE);
+        ActiveMQReceiverHandler<MessagePayload> h = new ActiveMQReceiverHandler<>(
+                destinationName,
+                connectionFactory,
+                RECEIVED_OBJECT::set,
+                MessagePayload.class,
+                objectMapper,
+                (m,e) -> RECEIVED_EXCEPTIONS.add(e),
+                1);
+
+        h.start();
+        Thread.sleep(300);
+        RECEIVED_EXCEPTIONS.forEach(Throwables::propagate);
+        assertNotNull(RECEIVED_OBJECT.get());
+        assertEquals(OBJECT, RECEIVED_OBJECT.get());
+        h.stop();
+
+    }
+
+    @Test
+    public void testThatObjectConsumptionFailsIfReceivedTypeIsWrong() throws Exception {
+        final ActiveMQObjectMessage OBJECT_MESSAGE = new ActiveMQObjectMessage();
+        MessagePayload OBJECT = new MessagePayload("Some data");
+        OBJECT_MESSAGE.setObject(OBJECT);
+
+        Set<Throwable> RECEIVED_EXCEPTIONS = new CopyOnWriteArraySet<>();
+        AtomicReference<String> RECEIVED_OBJECT = new AtomicReference<>();
+
+        setUpMocks(OBJECT_MESSAGE);
+        ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
+                destinationName,
+                connectionFactory,
+                RECEIVED_OBJECT::set,
+                String.class,
+                objectMapper,
+                (m,e) -> RECEIVED_EXCEPTIONS.add(e),
+                1);
+
+        h.start();
+        Thread.sleep(300);
+        assertFalse(RECEIVED_EXCEPTIONS.isEmpty());
+        assertNull(RECEIVED_OBJECT.get());
+        h.stop();
+
+    }
+
     @Test
     public void testExceptionInReceiver() throws Exception {
-        setUpMocks(Arrays.asList(null, "a", THROW_EXCEPTION_IN_RECEIVER, "b", null, "d"));
+        setUpMocks(null, "a", THROW_EXCEPTION_IN_RECEIVER, "b", null, "d");
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
@@ -180,7 +285,7 @@ public class ActiveMQReceiverHandlerTest {
     @Test
     public void testExceptionInMessageConsumer() throws Exception {
 
-        setUpMocks(Arrays.asList(null, "a", THROW_EXCEPTION_IN_CONSUMER, "b", null, "d"));
+        setUpMocks(null, "a", THROW_EXCEPTION_IN_CONSUMER, "b", null, "d");
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
@@ -206,8 +311,8 @@ public class ActiveMQReceiverHandlerTest {
     @Test
     public void testExceptionInMessageConsumer_ConsumerIsClosed() throws Exception {
 
-        setUpMocks(Arrays.asList(null, "a", THROW_EXCEPTION_IN_CONSUMER_CLOSED, "b", null, "d",
-                THROW_EXCEPTION_IN_CONSUMER_CLOSED, THROW_EXCEPTION_IN_CONSUMER_CLOSED));
+        setUpMocks(null, "a", THROW_EXCEPTION_IN_CONSUMER_CLOSED, "b", null, "d",
+                THROW_EXCEPTION_IN_CONSUMER_CLOSED, THROW_EXCEPTION_IN_CONSUMER_CLOSED);
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
