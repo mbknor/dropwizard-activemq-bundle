@@ -6,12 +6,14 @@ import com.kjetland.dropwizard.activemq.errors.JsonError;
 import io.dropwizard.lifecycle.Managed;
 import org.apache.activemq.ActiveMQMessageConsumer;
 import org.apache.activemq.command.ActiveMQMapMessage;
+import org.apache.activemq.command.ActiveMQObjectMessage;
 import org.apache.activemq.jms.pool.PooledMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.io.IOException;
+import java.lang.IllegalStateException;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -123,12 +125,20 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                 }
 
             } else if (message instanceof ActiveMQMapMessage) {
-                ActiveMQMapMessage m = (ActiveMQMapMessage)message;
-                if ( receiverType.equals(Map.class)) {
+                ActiveMQMapMessage m = (ActiveMQMapMessage) message;
+                if (receiverType.equals(Map.class)) {
                     // pass the string as is
-                    receiver.receive((T)m.getContentMap());
+                    receiver.receive((T) m.getContentMap());
                 } else {
                     throw new Exception("We received a ActiveMQMapMessage-message, so you have to use receiverType = java.util.Map to receive it");
+                }
+            } else if (message instanceof ActiveMQObjectMessage) {
+                ActiveMQObjectMessage m = (ActiveMQObjectMessage) message;
+                if (receiverType.isAssignableFrom(m.getObject().getClass())) {
+                    receiver.receive((T) m.getObject());
+                }
+                else {
+                    throw new IllegalStateException("Incompatible reciever types. " + receiverType + " must be assignable from " + m.getObject().getClass());
                 }
             } else {
                 throw new Exception("Do not know how to handle messages of type " + message.getClass());

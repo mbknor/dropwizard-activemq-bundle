@@ -51,6 +51,7 @@ public class ActiveMQBundle implements ConfiguredBundle<ActiveMQConfigHolder>, M
         log.debug("All activeMQ config: " + activeMQConfig);
 
         realConnectionFactory = new ActiveMQConnectionFactory(brokerUrl);
+        realConnectionFactory.setTrustedPackages(activeMQConfig.trustedPackages);
         if (username.isPresent() && password.isPresent()) {
             realConnectionFactory.setUserName(username.get());
             realConnectionFactory.setPassword(password.get());

@@ -152,6 +152,10 @@ activeMQ:
   # shutdownWaitInSeconds: 20
   # healthCheckMillisecondsToWait: 2000
   # timeToLiveInSeconds: -1     (Default message time-to-live is off. Specify a maximum lifespan here in seconds for all messages.)
+  # trustedPackages: (To prevent malicious code from being deserialized. Needed if you want to receive plain object messages, see http://activemq.apache.org/objectmessage.html)
+  #   - com.some.package
+  #   - java.util
+
   pool:
     maxConnections: 1
     maximumActiveSessionPerConnection: 3
@@ -328,3 +332,22 @@ activeMQConnections:
   gbQueue:
       brokerUrl: tcp://localhost:61626
 ```
+
+Receiving object messages
+-------------------------
+The bundle also supports receiving plain object messages. The code required for receiving object messages is the same as 
+for json deserialized objects. The magic is happening internally in the library before the message is dispatched to the 
+receiver.
+
+To avoid malicious code from being deserialized, you must configure trusted packages in the bundle configuration, i.e.
+the packages containing the code you want to receive. More information can be found at 
+http://activemq.apache.org/objectmessage.html . Default behaviour is to reject all packages.
+
+```yaml
+activeMQ:
+  ...
+  trustedPackages:
+    - com.youpackages.*
+    - java.util
+```
+

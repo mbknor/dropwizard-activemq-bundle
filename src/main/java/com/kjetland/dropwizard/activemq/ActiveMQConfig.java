@@ -4,6 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 public class ActiveMQConfig {
 
@@ -28,6 +33,10 @@ public class ActiveMQConfig {
 
     @JsonProperty
     @Valid
+    public List<String> trustedPackages = new ArrayList<>();
+
+    @JsonProperty
+    @Valid
     public ActiveMQPoolConfig pool;
 
     @Override
@@ -39,6 +48,7 @@ public class ActiveMQConfig {
                 ", timeToLiveInSeconds=" + timeToLiveInSeconds +
                 ", brokerUsername=" + brokerUsername +
                 ", brokerPassword=" + brokerPassword +
+                ", trustedPackages=" + trustedPackages.stream().collect(joining(", ")) +
                 ", pool=" + pool +
                 '}';
     }
