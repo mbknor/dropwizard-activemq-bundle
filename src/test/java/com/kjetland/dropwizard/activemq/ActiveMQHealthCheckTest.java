@@ -3,18 +3,18 @@ package com.kjetland.dropwizard.activemq;
 import com.codahale.metrics.health.HealthCheck;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ActiveMQHealthCheckTest {
 
     final String url = "tcp://localhost:31219";
     BrokerService broker;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         broker = new BrokerService();
         // configure the broker
@@ -22,7 +22,7 @@ public class ActiveMQHealthCheckTest {
         broker.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         broker.stop();
     }

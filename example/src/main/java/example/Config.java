@@ -5,8 +5,8 @@ import com.kjetland.dropwizard.activemq.ActiveMQConfig;
 import com.kjetland.dropwizard.activemq.ActiveMQConfigHolder;
 import io.dropwizard.Configuration;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 public class Config extends Configuration implements ActiveMQConfigHolder {
 

@@ -2,39 +2,29 @@ package com.kjetland.dropwizard.activemq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Sets;
+import jakarta.jms.*;
 import org.apache.activemq.ActiveMQMessageConsumer;
 import org.apache.activemq.command.ActiveMQObjectMessage;
-import org.eclipse.jetty.util.ConcurrentHashSet;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.internal.verification.VerificationModeFactory;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import javax.jms.*;
-import javax.validation.Payload;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ActiveMQReceiverHandlerTest {
 
     public static final String THROW_EXCEPTION_IN_CONSUMER = "THROW_EXCEPTION_IN_CONSUMER";
@@ -66,8 +56,8 @@ public class ActiveMQReceiverHandlerTest {
     int messageIndex = 0;
     List<Object> messagesList;
 
-    Set<String> receivedMessages = new ConcurrentHashSet<>();
-    Set<Throwable> receivedExceptions = new ConcurrentHashSet<>();
+    Set<String> receivedMessages = ConcurrentHashMap.newKeySet();
+    Set<Throwable> receivedExceptions = ConcurrentHashMap.newKeySet();
 
 
     public void setUpMocks(Object... messages) throws Exception {
@@ -80,7 +70,7 @@ public class ActiveMQReceiverHandlerTest {
 
         messageIndex = 0;
         messagesList = Arrays.asList(messages);
-        when(messageConsumer.receive(anyLong())).then( (i) -> popMessage());
+        when(messageConsumer.receive(anyLong())).then((i) -> popMessage());
         receivedMessages.clear();
         receivedExceptions.clear();
     }
@@ -96,20 +86,20 @@ public class ActiveMQReceiverHandlerTest {
 
         Object m = messagesList.get(messageIndex);
         messageIndex++;
-        if ( messageIndex>= messagesList.size()) {
+        if (messageIndex >= messagesList.size()) {
             messageIndex = 0;
         }
 
-        if ( m == null) {
+        if (m == null) {
             return null;
         }
 
-        if ( THROW_EXCEPTION_IN_CONSUMER.equals(m)) {
+        if (THROW_EXCEPTION_IN_CONSUMER.equals(m)) {
             throw new RuntimeException(THROW_EXCEPTION_IN_CONSUMER);
         }
 
-        if ( THROW_EXCEPTION_IN_CONSUMER_CLOSED.equals(m)) {
-            throw new javax.jms.IllegalStateException("The Consumer is closed");
+        if (THROW_EXCEPTION_IN_CONSUMER_CLOSED.equals(m)) {
+            throw new jakarta.jms.IllegalStateException("The Consumer is closed");
         }
 
 
@@ -117,12 +107,10 @@ public class ActiveMQReceiverHandlerTest {
             TextMessage msg = mock(TextMessage.class);
             when(msg.getText()).thenReturn((String) m);
             return msg;
-        }
-        else if (m instanceof ActiveMQObjectMessage) {
+        } else if (m instanceof ActiveMQObjectMessage) {
             return (ActiveMQObjectMessage) m;
-        }
-        else {
-            throw new IllegalArgumentException("Message type " +  m.getClass()+ " is not supported yet");
+        } else {
+            throw new IllegalArgumentException("Message type " + m.getClass() + " is not supported yet");
         }
     }
 
@@ -133,15 +121,16 @@ public class ActiveMQReceiverHandlerTest {
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testNormal() throws Exception {
         setUpMocks(null, "a", "b", null, "d");
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage((String)m),
+                (m) -> receiveMessage((String) m),
                 String.class,
                 objectMapper,
-                (m,e) -> exceptionHandler(m,e),
+                (m, e) -> exceptionHandler(m, e),
                 1);
 
         h.start();
@@ -152,12 +141,12 @@ public class ActiveMQReceiverHandlerTest {
         assertTrue(receivedMessages.contains("b"));
         assertTrue(receivedMessages.contains("d"));
         assertEquals(3, receivedMessages.size());
-        assertTrue(receivedExceptions.size()==0);
+        assertTrue(receivedExceptions.size() == 0);
         h.stop();
 
     }
 
-    static class MessagePayload implements  Serializable {
+    static class MessagePayload implements Serializable {
         private final String payLoad;
 
         MessagePayload(String payLoad) {
@@ -166,6 +155,7 @@ public class ActiveMQReceiverHandlerTest {
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testThatActiveMQObjectMessageIsSupported() throws Exception {
         final ActiveMQObjectMessage OBJECT_MESSAGE = new ActiveMQObjectMessage();
         MessagePayload OBJECT = new MessagePayload("Some data");
@@ -181,7 +171,7 @@ public class ActiveMQReceiverHandlerTest {
                 RECEIVED_OBJECT::set,
                 MessagePayload.class,
                 objectMapper,
-                (m,e) -> RECEIVED_EXCEPTIONS.add(e),
+                (m, e) -> RECEIVED_EXCEPTIONS.add(e),
                 1);
 
         h.start();
@@ -203,6 +193,7 @@ public class ActiveMQReceiverHandlerTest {
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testThatCanReceiveObjectsOfSubtype() throws Exception {
         final ActiveMQObjectMessage OBJECT_MESSAGE = new ActiveMQObjectMessage();
         ExtendedPayload OBJECT = new ExtendedPayload("Some data");
@@ -218,7 +209,7 @@ public class ActiveMQReceiverHandlerTest {
                 RECEIVED_OBJECT::set,
                 MessagePayload.class,
                 objectMapper,
-                (m,e) -> RECEIVED_EXCEPTIONS.add(e),
+                (m, e) -> RECEIVED_EXCEPTIONS.add(e),
                 1);
 
         h.start();
@@ -231,6 +222,7 @@ public class ActiveMQReceiverHandlerTest {
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testThatObjectConsumptionFailsIfReceivedTypeIsWrong() throws Exception {
         final ActiveMQObjectMessage OBJECT_MESSAGE = new ActiveMQObjectMessage();
         MessagePayload OBJECT = new MessagePayload("Some data");
@@ -246,7 +238,7 @@ public class ActiveMQReceiverHandlerTest {
                 RECEIVED_OBJECT::set,
                 String.class,
                 objectMapper,
-                (m,e) -> RECEIVED_EXCEPTIONS.add(e),
+                (m, e) -> RECEIVED_EXCEPTIONS.add(e),
                 1);
 
         h.start();
@@ -258,15 +250,16 @@ public class ActiveMQReceiverHandlerTest {
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testExceptionInReceiver() throws Exception {
         setUpMocks(null, "a", THROW_EXCEPTION_IN_RECEIVER, "b", null, "d");
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage((String)m),
+                (m) -> receiveMessage((String) m),
                 String.class,
                 objectMapper,
-                (m,e) -> exceptionHandler(m,e),
+                (m, e) -> exceptionHandler(m, e),
                 1);
 
         h.start();
@@ -277,22 +270,23 @@ public class ActiveMQReceiverHandlerTest {
         assertTrue(receivedMessages.contains("b"));
         assertTrue(receivedMessages.contains("d"));
         assertEquals(3, receivedMessages.size());
-        assertTrue(receivedExceptions.size()>0);
+        assertTrue(receivedExceptions.size() > 0);
         h.stop();
 
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testExceptionInMessageConsumer() throws Exception {
 
         setUpMocks(null, "a", THROW_EXCEPTION_IN_CONSUMER, "b", null, "d");
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage(m),
+                (m) -> receiveMessage(m),
                 String.class,
                 objectMapper,
-                (m,e) -> exceptionHandler(m,e),
+                (m, e) -> exceptionHandler(m, e),
                 1);
 
         h.start();
@@ -303,12 +297,13 @@ public class ActiveMQReceiverHandlerTest {
         assertTrue(receivedMessages.contains("b"));
         assertTrue(receivedMessages.contains("d"));
         assertEquals(3, receivedMessages.size());
-        assertTrue(receivedExceptions.size()==0);
+        assertTrue(receivedExceptions.size() == 0);
 
         h.stop();
     }
 
     @Test
+    @MockitoSettings(strictness = Strictness.LENIENT)
     public void testExceptionInMessageConsumer_ConsumerIsClosed() throws Exception {
 
         setUpMocks(null, "a", THROW_EXCEPTION_IN_CONSUMER_CLOSED, "b", null, "d",
@@ -316,10 +311,10 @@ public class ActiveMQReceiverHandlerTest {
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage(m),
+                (m) -> receiveMessage(m),
                 String.class,
                 objectMapper,
-                (m,e) -> exceptionHandler(m, e),
+                (m, e) -> exceptionHandler(m, e),
                 1);
 
         h.start();

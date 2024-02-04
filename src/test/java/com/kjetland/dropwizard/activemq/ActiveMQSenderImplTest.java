@@ -1,31 +1,23 @@
 package com.kjetland.dropwizard.activemq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import jakarta.jms.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ActiveMQSenderImplTest {
 
     @Mock
@@ -43,7 +35,7 @@ public class ActiveMQSenderImplTest {
     @Mock
     private TextMessage textMessage;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         when(connectionFactory.createConnection()).thenReturn(connection);
         when(connection.createSession(anyBoolean(), anyInt())).thenReturn(session);
@@ -142,15 +134,5 @@ public class ActiveMQSenderImplTest {
         verify(messageProducer).close();
         verify(session).close();
         verify(connection).close();
-    }
-
-    @Test
-    public void testSendJson() throws Exception {
-
-    }
-
-    @Test
-    public void testSend1() throws Exception {
-
     }
 }

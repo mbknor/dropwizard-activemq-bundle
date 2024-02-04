@@ -11,7 +11,7 @@ import org.apache.activemq.jms.pool.PooledMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.*;
+import jakarta.jms.*;
 import java.io.IOException;
 import java.lang.IllegalStateException;
 import java.lang.reflect.Field;
@@ -39,8 +39,8 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     private final ActiveMQReceiver<T> receiver;
     private final ObjectMapper objectMapper;
     private final Thread thread;
-    private AtomicBoolean shouldStop = new AtomicBoolean(false);
-    private AtomicBoolean isReceiving = new AtomicBoolean(false);
+    private final AtomicBoolean shouldStop = new AtomicBoolean(false);
+    private final AtomicBoolean isReceiving = new AtomicBoolean(false);
     private final ActiveMQBaseExceptionHandler exceptionHandler;
     protected final DestinationCreator destinationCreator = new DestinationCreatorImpl();
     protected final long shutdownWaitInSeconds;
@@ -213,14 +213,14 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                             runReceiveLoop(messageConsumer);
                         } finally {
                             isReceiving.set(false);
-                            ActiveMQUtils.silent(() -> messageConsumer.close());
+                            ActiveMQUtils.silent(messageConsumer::close);
                         }
                     } finally {
-                        ActiveMQUtils.silent(() -> session.close());
+                        ActiveMQUtils.silent(session::close);
                     }
 
                 } finally {
-                    ActiveMQUtils.silent(() -> connection.close());
+                    ActiveMQUtils.silent(connection::close);
                 }
             } catch (Throwable e) {
                 errorsInARowCount++;
@@ -230,7 +230,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
                 verboseInitLogging = true;
 
                 // Must check for issue #5 - Use less verbose errors when 'The Consumer is closed'
-                if ( e instanceof javax.jms.IllegalStateException
+                if ( e instanceof jakarta.jms.IllegalStateException
                         && e.getMessage().equals("The Consumer is closed")
                         && !continuingErrorSituation) {
                     // This is the first error we see,
@@ -285,7 +285,7 @@ public class ActiveMQReceiverHandler<T> implements Managed, Runnable {
     public HealthCheck getHealthCheck() {
         return new HealthCheck() {
             @Override
-            protected Result check() throws Exception {
+            protected Result check() {
                 if (isReceiving.get()) {
                     return Result.healthy("Is receiving from " + destination);
                 } else {

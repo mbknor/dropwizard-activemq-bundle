@@ -1,13 +1,12 @@
 package com.kjetland.dropwizard.activemq;
 
-import org.junit.Test;
+import jakarta.jms.Queue;
+import jakarta.jms.Session;
+import jakarta.jms.Topic;
+import org.junit.jupiter.api.Test;
 
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.Topic;
-
-import static org.junit.Assert.assertSame;
-import static org.mockito.Matchers.eq;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -23,7 +22,7 @@ public class DestinationCreatorImplTest {
 
         DestinationCreator destinationCreator = new DestinationCreatorImpl();
 
-        assertSame(topic, destinationCreator.create(session, "topic:"+name));
+        assertSame(topic, destinationCreator.create(session, "topic:" + name));
         assertSame(queue, destinationCreator.create(session, "queue:" + name));
         assertSame(queue, destinationCreator.create(session, name));
     }

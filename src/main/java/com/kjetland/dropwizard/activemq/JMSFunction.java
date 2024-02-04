@@ -1,6 +1,6 @@
 package com.kjetland.dropwizard.activemq;
 
-import javax.jms.JMSException;
+import jakarta.jms.JMSException;
 
 /**
  * A JMSFunction represents a function that can throw a JMSException.

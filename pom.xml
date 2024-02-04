@@ -29,11 +29,11 @@
     </licenses>
 
     <properties>
-        <dropwizard.version>1.0.2</dropwizard.version>
-        <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
-        <activemq.version>5.14.1</activemq.version>
-        <mockito.version>1.9.5</mockito.version>
-        <junit.version>4.11</junit.version>
+        <dropwizard.version>4.0.4</dropwizard.version>
+        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <activemq.version>6.0.1</activemq.version>
+        <mockito.version>5.10.0</mockito.version>
+        <junit.version>5.10.1</junit.version>
     </properties>
 
     <dependencies>
@@ -55,13 +55,13 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>

@@ -5,8 +5,8 @@ import com.kjetland.dropwizard.activemq.ActiveMQConfig;
 import com.kjetland.dropwizard.activemq.ActiveMQMultiConfigHolder;
 import io.dropwizard.Configuration;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
 public class MultiQConfig extends Configuration implements ActiveMQMultiConfigHolder {

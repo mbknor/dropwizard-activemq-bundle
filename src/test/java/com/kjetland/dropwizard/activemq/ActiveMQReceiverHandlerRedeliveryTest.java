@@ -4,24 +4,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.jms.pool.PooledConnectionFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ActiveMQReceiverHandlerRedeliveryTest {
 
     final String url = "tcp://localhost:31219?" +
-        "jms.redeliveryPolicy.maximumRedeliveries=3" +
-        "&jms.redeliveryPolicy.initialRedeliveryDelay=100" +
-        "&jms.redeliveryPolicy.redeliveryDelay=100";
+            "jms.redeliveryPolicy.maximumRedeliveries=3" +
+            "&jms.redeliveryPolicy.initialRedeliveryDelay=100" +
+            "&jms.redeliveryPolicy.redeliveryDelay=100";
 
     BrokerService broker;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         broker = new BrokerService();
         // configure the broker
@@ -32,7 +32,7 @@ public class ActiveMQReceiverHandlerRedeliveryTest {
         okCount = 0;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         broker.stop();
         // Just give the broker some time to stop
@@ -76,13 +76,13 @@ public class ActiveMQReceiverHandlerRedeliveryTest {
         ObjectMapper objectMapper = new ObjectMapper();
 
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
-            destinationName,
-            connectionFactory,
-            this::receiveMessage,
-            String.class,
-            objectMapper,
-            this::exceptionHandler,
-            1);
+                destinationName,
+                connectionFactory,
+                this::receiveMessage,
+                String.class,
+                objectMapper,
+                this::exceptionHandler,
+                1);
 
         h.start();
 

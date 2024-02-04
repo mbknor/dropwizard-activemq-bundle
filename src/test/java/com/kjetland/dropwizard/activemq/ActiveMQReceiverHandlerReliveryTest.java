@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.jms.pool.PooledConnectionFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ActiveMQReceiverHandlerReliveryTest {
 
@@ -21,7 +21,7 @@ public class ActiveMQReceiverHandlerReliveryTest {
 
     BrokerService broker;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         broker = new BrokerService();
         // configure the broker
@@ -32,7 +32,7 @@ public class ActiveMQReceiverHandlerReliveryTest {
         okCount = 0;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         broker.stop();
         // Just give the broker some time to stop
@@ -44,7 +44,7 @@ public class ActiveMQReceiverHandlerReliveryTest {
 
     private void receiveMessage(String message) {
 
-        if ( message.equals("fail")) {
+        if (message.equals("fail")) {
             errorCount++;
             throw new RuntimeException("Error in receiveMessage");
         } else {
@@ -78,10 +78,10 @@ public class ActiveMQReceiverHandlerReliveryTest {
         ActiveMQReceiverHandler<String> h = new ActiveMQReceiverHandler<>(
                 destinationName,
                 connectionFactory,
-                (m)->receiveMessage(m),
+                (m) -> receiveMessage(m),
                 String.class,
                 objectMapper,
-                (m,e) -> exceptionHandler(m,e),
+                (m, e) -> exceptionHandler(m, e),
                 1);
 
         h.start();
@@ -94,7 +94,7 @@ public class ActiveMQReceiverHandlerReliveryTest {
 
         Thread.sleep(1000);
 
-        assertEquals(3+1, errorCount);
+        assertEquals(3 + 1, errorCount);
         assertEquals(2, okCount);
     }
 }

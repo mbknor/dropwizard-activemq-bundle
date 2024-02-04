@@ -1,6 +1,6 @@
 package com.kjetland.dropwizard.activemq;
 
-import javax.jms.Message;
+import jakarta.jms.Message;
 
 public interface ActiveMQBaseExceptionHandler {
 
